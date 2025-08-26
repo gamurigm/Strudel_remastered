@@ -1,35 +1,43 @@
-// Default tune loaded by the REPL. Edit this file to change the default snippet.
+// Simple loader: import session file as raw text and export a cleaned defaultTune string
+// This strips `export` lines and, if present, extracts the inner body of `export function applySession() { ... }`
+import sessionRaw from "./live-sessions/omalley.mjs?raw";
 
+function stripExports(src) {
+  if (!src) return src;
+  // remove common markdown fences
+  src = src.replace(/^\s*```(?:javascript)?\n/, '');
+  src = src.replace(/\n```\s*$/, '');
 
-export const defaultTune = `// Welcome to Strudel (local dev)
-// Edit this file: website/src/repl/defaultTune.mjs
+  // If the file exports an applySession function, extract its inner body
+  const fnRegex = /export\s+function\s+applySession\s*\([^)]*\)\s*\{/m;
+  const fnMatch = src.match(fnRegex);
+  if (fnMatch) {
+    const start = fnMatch.index;
+    const braceIndex = src.indexOf('{', start + fnMatch[0].length - 1);
+    if (braceIndex !== -1) {
+      // find matching closing brace
+      let depth = 1;
+      let i = braceIndex + 1;
+      for (; i < src.length; i++) {
+        const ch = src[i];
+        if (ch === '{') depth++;
+        else if (ch === '}') {
+          depth--;
+          if (depth === 0) break;
+        }
+      }
+      if (i < src.length) {
+        const inner = src.slice(braceIndex + 1, i);
+        return inner.trim();
+      }
+    }
+  }
 
-// Melodía + Bajo + Percusión — simple y musical
-setcps(1.1); // ajusta tempo global
+  // Otherwise, remove any lines that start with `export ` and return the rest
+  const lines = src.split('\n').filter((l) => !/^\s*export\s+/.test(l));
+  return lines.join('\n').trim();
+}
 
-// "O'Malley, Former Underdog" (work in progress)
-// song @by Deerhoof
-// script @by eefano
-setDefaultVoicings('legacy')
-const crdpart = "<~@6 0@17 1@4 0@17 1@4 2@10>".pickRestart(
-["< C@2 D@2 [[C ~]!3 D@2 [D ~] D@2]@2 G@2 D@3 Am G D A D@2 >"
-,"< Em@2 D@2 >"
-,"< [G A] [[C ~]!3 D@2 [D ~] D@2]!3 D >/2"
-,"< G [D@6 G@10] >"
-]);
-stack("~"
-,"<0@6 1@17 2@4 1@17 2@4 3@2 ~@8>".pickRestart(
-["< <~ 0 1 2 3 4 5 6 7 4 5 6 7 8 9 10 11 7 8 9 10 11 12 13> ~>*8".sub(7)
-,"< ~@2 5 6 7@2 6 5 6 ~ 4 ~@3 8 ~@11 7 8 9@2 8 7 8 ~ 6 ~@3 11@4 10 9 10 ~ 8 ~ 9@2 8 7 8 ~ 6 ~ 7 6 5 ~ 6 ~ 4 ~@5 >*4"
-,"< 7@3 8 9@2 12@2 11@3 8 6@4 >*4"
-,"< 7@2 6@2 5 6 5 4 >*4"
-,"< 7 ~@7 6 ~@7 5 ~@2 5 ~ 5 4 ~@9 >*4"
-]).n().scale("g3:major").s("gm_lead_1_square").room(0.4).delay(0.4).dfb(0.3).dt(60/128).gain(0.65)
+const cleaned = stripExports(sessionRaw);
 
-,crdpart.chord().anchor("A4").voicing().s("gm_lead_8_bass_lead").room(0.4).color("blue").gain(0.5)
-
-,s("hh*2").bank("RolandTR909").room(0.2).color("yellow").gain(0.2)
-).cpm(147/2)
-
-
-`;
+export const defaultTune = cleaned || `// fallback: simple tune\nsetcps(1); n(\"0\").s(\"sine\").gain(.1).out();`;
