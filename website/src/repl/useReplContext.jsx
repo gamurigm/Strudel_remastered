@@ -135,11 +135,14 @@ export function useReplContext() {
       } else if (latestCode) {
         code = latestCode;
         msg = `Your last session has been loaded!`;
-      } else {
-        /* const { code: randomTune, name } = await getRandomTune();
+        } else {
+          /* const { code: randomTune, name } = await getRandomTune();
         code = randomTune; */
-        code = '$: s("[bd <hh oh>]*2").bank("tr909").dec(.4)';
-        msg = `Default code has been loaded`;
+        code = `// Welcome to Strudel (local dev)
+// Try this simple pattern and press Play
+setcps(1)
+n("0 2 4 5").s("sine").gain(.12)`;
+        msg = `Default welcome snippet has been loaded`;
       }
       editor.setCode(code);
       setDocumentTitle(code);

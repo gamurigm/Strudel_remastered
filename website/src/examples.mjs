@@ -1,4 +1,6 @@
 export const examples = [
+ 
+
   `// "coastline" @by eddyflux
 // @version 1.0
 samples('github:eddyflux/crate')
