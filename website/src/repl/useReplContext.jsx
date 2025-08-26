@@ -33,6 +33,7 @@ import { audioEngineTargets } from '../settings.mjs';
 import { useStore } from '@nanostores/react';
 import { prebake } from './prebake.mjs';
 import { getRandomTune, initCode, loadModules, shareCode } from './util.mjs';
+import { defaultTune } from './defaultTune.mjs';
 import './Repl.css';
 import { setInterval, clearInterval } from 'worker-timers';
 import { getMetadata } from '../metadata_parser';
@@ -136,13 +137,10 @@ export function useReplContext() {
         code = latestCode;
         msg = `Your last session has been loaded!`;
         } else {
-          /* const { code: randomTune, name } = await getRandomTune();
+        /* const { code: randomTune, name } = await getRandomTune();
         code = randomTune; */
-        code = `// Welcome to Strudel (local dev)
-// Try this simple pattern and press Play
-setcps(1)
-n("0 2 4 5").s("sine").gain(.12)`;
-        msg = `Default welcome snippet has been loaded`;
+        code = defaultTune;
+        msg = `Default code has been loaded from defaultTune.mjs`;
       }
       editor.setCode(code);
       setDocumentTitle(code);
@@ -150,6 +148,33 @@ n("0 2 4 5").s("sine").gain(.12)`;
     });
 
     editorRef.current = editor;
+
+    // Hot Module Replacement: if defaultTune.mjs changes, update the editor live
+    if (import.meta.hot) {
+      try {
+        import.meta.hot.accept('./defaultTune.mjs', (newModule) => {
+          try {
+            const newCode = newModule?.defaultTune;
+            if (newCode && editorRef.current) {
+              // update editor content
+              editorRef.current.setCode(newCode);
+              // try to evaluate (will only play if audio has been enabled by user)
+              try {
+                editorRef.current.evaluate();
+              } catch (e) {
+                // ignore evaluation errors during HMR
+                console.warn('Auto-evaluate failed after HMR:', e);
+              }
+            }
+          } catch (err) {
+            console.error('Error handling defaultTune HMR update', err);
+          }
+        });
+      } catch (err) {
+        // some environments may not support module-specific accept; fallback silently
+        console.debug('HMR accept for defaultTune.mjs not available', err);
+      }
+    }
   }, []);
 
   const [replState, setReplState] = useState({});
