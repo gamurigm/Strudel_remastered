@@ -1,6 +1,8 @@
 // Simple loader: import session file as raw text and export a cleaned defaultTune string
 // This strips `export` lines and, if present, extracts the inner body of `export function applySession() { ... }`
-import sessionRaw from "./live-sessions/omalley.mjs?raw";
+// import the session file as raw text so we can strip exports and use the code
+// as an editor default. Vite serves file contents with the `?raw` suffix.
+import sessionRaw from "./live-sessions/waltz2.mjs?raw";
 
 function stripExports(src) {
   if (!src) return src;
