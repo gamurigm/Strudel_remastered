@@ -11,6 +11,7 @@ use tauri::Manager;
 use tokio::sync::mpsc;
 use tokio::sync::Mutex;
 // the payload type must implement `Serialize` and `Clone`.
+#[allow(dead_code)]
 #[derive(Clone, serde::Serialize)]
 struct Payload {
   message: String,

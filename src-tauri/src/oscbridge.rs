@@ -12,6 +12,7 @@ use tokio::sync::{mpsc, Mutex};
 use crate::loggerbridge::Logger;
 pub struct OscMsg {
     pub msg_buf: Vec<u8>,
+    #[allow(dead_code)]
     pub timestamp: f64,
 }
 
