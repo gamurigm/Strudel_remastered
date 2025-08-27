@@ -47,6 +47,18 @@ if (typeof window !== 'undefined') {
     audioDeviceName,
     multiChannelOrbits: parseBoolean(multiChannelOrbits),
   });
+    // apply persisted master gain once audio is ready
+    audioReady.then(() => {
+      try {
+        const mg = settingsMap.get().masterGain;
+        if (typeof mg !== 'undefined' && mg !== null) {
+          // lazy import setMasterGain from webaudio package and apply persisted value
+          import('@strudel/webaudio').then((mod) => mod.setMasterGain?.(mg)).catch(() => {});
+        }
+      } catch (e) {
+        // ignore
+      }
+    });
   modulesLoading = loadModules();
   presets = prebake();
   drawContext = getDrawContext();

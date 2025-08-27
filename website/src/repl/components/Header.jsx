@@ -1,7 +1,8 @@
 import PlayCircleIcon from '@heroicons/react/20/solid/PlayCircleIcon';
 import StopCircleIcon from '@heroicons/react/20/solid/StopCircleIcon';
 import cx from '@src/cx.mjs';
-import { useSettings, setIsZen } from '../../settings.mjs';
+import { useSettings, setIsZen, settingsMap } from '../../settings.mjs';
+import { setMasterGain, getMasterGain } from '@strudel/webaudio';
 import '../Repl.css';
 
 const { BASE_URL } = import.meta.env;
@@ -82,6 +83,23 @@ export function Header({ context, embedded = false }) {
               <>loading...</>
             )}
           </button>
+          {/* compact master volume control */}
+          <div className="flex items-center px-2" style={{ minWidth: 120 }}>
+            <label className="text-sm mr-2 opacity-75">Vol</label>
+            <input
+              aria-label="master-volume"
+              type="range"
+              min="0"
+              max="2"
+              step="0.01"
+              defaultValue={settingsMap.get().masterGain ?? (getMasterGain?.() ?? 0.8)}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                settingsMap.setKey('masterGain', v);
+                setMasterGain?.(v);
+              }}
+            />
+          </div>
           <button
             onClick={handleEvaluate}
             title="update"

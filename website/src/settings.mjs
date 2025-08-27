@@ -41,6 +41,7 @@ export const defaultSettings = {
   isCSSAnimationDisabled: false,
   maxPolyphony: 128,
   multiChannelOrbits: false,
+  masterGain: 0.8,
 };
 
 let search = null;

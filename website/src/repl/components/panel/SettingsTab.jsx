@@ -6,7 +6,7 @@ import { ButtonGroup } from './Forms.jsx';
 import { AudioDeviceSelector } from './AudioDeviceSelector.jsx';
 import { AudioEngineTargetSelector } from './AudioEngineTargetSelector.jsx';
 import { confirmDialog } from '../../util.mjs';
-import { DEFAULT_MAX_POLYPHONY, setMaxPolyphony, setMultiChannelOrbits } from '@strudel/webaudio';
+import { DEFAULT_MAX_POLYPHONY, setMaxPolyphony, setMultiChannelOrbits, setMasterGain, getMasterGain } from '@strudel/webaudio';
 
 function Checkbox({ label, value, onChange, disabled = false }) {
   return (
@@ -112,8 +112,12 @@ export function SettingsTab({ started }) {
     isTabIndentationEnabled,
     isMultiCursorEnabled,
   } = useSettings();
+  const { masterGain } = useSettings();
   const shouldAlwaysSync = isUdels();
   const canChangeAudioDevice = AudioContext.prototype.setSinkId != null;
+  // ensure masterGain is shown prominently
+  const masterGainValueForUI = Number(masterGain ?? getMasterGain?.() ?? 0.8);
+  
   return (
     <div className="text-foreground p-4 space-y-4 w-full" style={{ fontFamily }}>
       {canChangeAudioDevice && (
@@ -163,6 +167,24 @@ export function SettingsTab({ started }) {
           type="number"
           placeholder=""
           value={maxPolyphony ?? ''}
+        />
+      </FormItem>
+      <FormItem label="Master Volume">
+        <NumberSlider
+          value={masterGain ?? getMasterGain?.() ?? 0.8}
+          onChange={(v) => {
+            // persist setting
+            settingsMap.setKey('masterGain', v);
+            // update audio engine if available
+            try {
+              setMasterGain?.(v);
+            } catch (e) {
+              // ignore if audio engine not loaded yet
+            }
+          }}
+          min={0}
+          max={2}
+          step={0.01}
         />
       </FormItem>
       <FormItem>

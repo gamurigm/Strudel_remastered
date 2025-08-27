@@ -286,6 +286,7 @@ let delays = {};
 const maxfeedback = 0.98;
 
 let channelMerger, destinationGain;
+let masterGainValue = 1.0; // default internal master gain
 //update the output channel configuration to match user's audio device
 export function initializeAudioOutput() {
   const audioContext = getAudioContext();
@@ -293,6 +294,8 @@ export function initializeAudioOutput() {
   audioContext.destination.channelCount = maxChannelCount;
   channelMerger = new ChannelMergerNode(audioContext, { numberOfInputs: audioContext.destination.channelCount });
   destinationGain = new GainNode(audioContext);
+  // apply stored master gain value when initializing
+  destinationGain.gain.value = masterGainValue;
   channelMerger.connect(destinationGain);
   destinationGain.connect(audioContext.destination);
 }
@@ -325,6 +328,22 @@ export const panic = () => {
   destinationGain = null;
   channelMerger == null;
 };
+
+// Public API to control master gain (unit linear 0..1+)
+export function setMasterGain(val) {
+  masterGainValue = Number(val) || 0;
+  if (destinationGain) {
+    try {
+      destinationGain.gain.setValueAtTime(masterGainValue, getAudioContext().currentTime);
+    } catch (e) {
+      destinationGain.gain.value = masterGainValue;
+    }
+  }
+}
+
+export function getMasterGain() {
+  return masterGainValue;
+}
 
 function getDelay(orbit, delaytime, delayfeedback, t, channels) {
   if (delayfeedback > maxfeedback) {
