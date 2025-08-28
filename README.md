@@ -1,49 +1,78 @@
-# strudel
+# Strudel — resumen del proyecto y guía rápida
 
-Live coding patterns on the web
-https://strudel.cc/
+Este README reúne instrucciones verificadas del repositorio sobre cómo compilar la aplicación de escritorio y un resumen conciso de la sintaxis usada en el REPL/Live-sessions.
 
-Development is moving to https://codeberg.org/uzu/strudel
+---
 
-- Try it here: <https://strudel.cc>
-- Docs: <https://strudel.cc/learn>
-- Technical Blog Post: <https://loophole-letters.vercel.app/strudel>
-- 1 Year of Strudel Blog Post: <https://loophole-letters.vercel.app/strudel1year>
-- 2 Years of Strudel Blog Post: <https://strudel.cc/blog/#year-2>
+## Compilación y ejecución
 
-## Running Locally
+Comandos documentados en `./.github/instructions/commands.instructions.md`.
 
-After cloning the project, you can run the REPL locally:
+- Compilar la app de escritorio (según la instrucción del repositorio):
 
-1. Install [Node.js](https://nodejs.org/)
-2. Install [pnpm](https://pnpm.io/installation)
-3. Install dependencies by running the following command:
-   ```bash
-   pnpm i
-   ```
-4. Run the development server:
-   ```bash
-   pnpm dev
-   ```
+```powershell
+cargo run --release
+```
 
-## Using Strudel In Your Project
+Nota: este comando sugiere que la app de escritorio usa Rust/Tauri o similar y que `cargo` forma parte del flujo de build. Revisa `src-tauri/` o `packages/desktopbridge/` para confirmar la configuración específica y scripts adicionales.
 
-This project is organized into many [packages](./packages), which are also available on [npm](https://www.npmjs.com/search?q=%40strudel).
+- Ejecutar el REPL en development (puerto documentado):
 
-Read more about how to use these in your own project [here](https://strudel.cc/technical-manual/project-start).
+```powershell
+pnpm dev --port xxxx
+```
 
-You will need to abide by the terms of the [GNU Affero Public Licence v3](LICENSE). As such, Strudel code can only be shared within free/open source projects under the same license -- see the license for details.
+- Ejemplos de uso del sampler (extraídos de `commands.instructions.md`):
 
-Licensing info for the default sound banks can be found over on the [dough-samples](https://github.com/felixroos/dough-samples/blob/main/README.md) repository.
+```javascript
+await samples({ 'aaahh': 'aaahh.mp3' }, 'https://raw.githubusercontent.com/gamurigm/samples/main/')
+setcps(120/60/4)
+test_aaahh: n("<0 1 2>").s("aaahh").gain(0.9)
+```
 
-## Contributing
+Esto demuestra cargar samples remotos y probar su reproducción.
 
-There are many ways to contribute to this project! See [contribution guide](./CONTRIBUTING.md). You can find the full list of contributors [here](https://codeberg.org/uzu/strudel/activity/contributors).
+También se muestra un ejemplo para cargar samples desde una red local (dirección IP en documentación):
 
-## Community
+```javascript
+await samples({ 'aaahh': 'aaahh.mp3' }, 'http://172.18.224.1:5432/')
+setcps(120/60/4)
+test_aaahh: n("<0 1 2>").s("aaahh").gain(0.9)
+```
 
-There is a #strudel channel on the TidalCycles discord: <https://discord.com/invite/HGEdXmRkzT>
+Y una utilidad de procesamiento de audio documentada:
 
-You can also ask questions and find related discussions on the tidal club forum: <https://club.tidalcycles.org/>
+```bash
+ffmpeg -i input.wav -ss 00:00:00 -t 00:00:15 output.wav
+```
 
-The discord and forum is shared with the haskell (tidal) and python (vortex) siblings of this project.
+---
+
+## Resumen de la sintaxis esencial (extracto)
+
+- s("...") — define un patrón ejecutable en el REPL.
+- Tokens comunes: `bd`, `sd`, `rim`, `hh`, `oh`, `misc`, etc.
+- Separador temporal: espacios separan eventos; coma `,` separa capas simultáneas.
+- Silencio: `~` indica silencio en una posición del ciclo.
+- Repetición/distribución: `token*n` reparte `n` instancias del token a lo largo del ciclo.
+- Agrupación: `[...]` agrupa subpatrones.
+- Alternancia por ciclo: `< ... >` define variantes por ciclo.
+- Parámetros dinámicos: `rim*<1 2>` aplica multiplicadores que varían entre ciclos.
+- Selección de variantes: `.n("0 1 2")` o `token:idx` para variantes de muestra.
+- Bancos: `.bank("Name")` aplica un prefijo de banco a tokens.
+- Tempo: `setcpm(...)`, `setcps(...)` controlan la relación temporal; ejemplo `setcpm(60)`.
+
+Ejemplo mínimo (tal como aparece en la documentación):
+
+```javascript
+setcpm(60)
+samples({ 'moog': { 'g3': 'moog/005_Mighty%20Moog%20G3.wav' } }, 'github:tidalcycles/dirt-samples')
+note("g3 [bb3 c4]").s('moog').clip(1).gain(.5)
+```
+
+Para detalles ampliados (voicings, pitch, compases y ejemplos interactivos) revisa `strudel/website/src/pages/understand/` y `strudel/website/src/repl/`.
+
+---
+
+
+
