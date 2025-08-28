@@ -1,28 +1,61 @@
+
 # Strudel — resumen del proyecto y guía rápida
 
-Este README reúne instrucciones verificadas del repositorio sobre cómo compilar la aplicación de escritorio y un resumen conciso de la sintaxis usada en el REPL/Live-sessions.
+Este README reúne instrucciones verificadas del repositorio sobre cómo compilar la aplicación de escritorio, ejecutar el REPL en modo desarrollo y una referencia concisa de la sintaxis usada en el REPL/Live-sessions.
+
+## Resumen (rápido)
+
+- Repositorio: colección de paquetes y utilidades para un REPL de audio/ patrones (ver `packages/` y `website/`).
+- Ejemplos interactivos y páginas explicativas se encuentran en `strudel/website/src/pages/understand/` y `strudel/website/src/repl/`.
 
 ---
 
-## Compilación y ejecución
+## Requisitos
 
-Comandos documentados en `./.github/instructions/commands.instructions.md`.
+- Node.js (16+ recomendado)
+- pnpm (para instalar dependencias y ejecutar scripts)
+- Rust + Cargo (solo si quieres compilar/ejecutar la app de escritorio basada en Tauri)
+- ffmpeg (opcional, para recortar/convertir samples)
 
-- Compilar la app de escritorio (según la instrucción del repositorio):
+## Instalación
+
+1. Instala dependencias de JavaScript desde la raíz del paquete `strudel`:
+
+```powershell
+pnpm install
+```
+
+2. (Opcional) Si vas a trabajar con la app de escritorio, asegúrate de tener Rust toolchain y las dependencias nativas instaladas.
+
+---
+
+## Desarrollo (REPL / sitio)
+
+- Ejecutar el entorno de desarrollo (REPL / sitio):
+
+```powershell
+pnpm dev [--port <PUERTO>]
+```
+
+Nota: algunos scripts aceptan la opción `--port`; revisa `package.json` en la raíz del paquete para confirmar los flags disponibles.
+
+## Aplicación de escritorio
+
+Comando documentado en `./.github/instructions/commands.instructions.md`.
+
+- Compilar/ejecutar la app de escritorio (ejemplo genérico cuando la app usa Tauri/Rust):
 
 ```powershell
 cargo run --release
 ```
 
-Nota: este comando sugiere que la app de escritorio usa Rust/Tauri o similar y que `cargo` forma parte del flujo de build. Revisa `src-tauri/` o `packages/desktopbridge/` para confirmar la configuración específica y scripts adicionales.
+Nota: este comando indica que la app de escritorio puede usar Rust/Tauri; revisa `src-tauri/` o `packages/desktopbridge/` para confirmar la configuración y pasos concretos.
 
-- Ejecutar el REPL en development (puerto documentado):
+---
 
-```powershell
-pnpm dev --port xxxx
-```
+## Ejemplos de uso: samples y patrones
 
-- Ejemplos de uso del sampler (extraídos de `commands.instructions.md`):
+Los ejemplos siguientes ilustran cómo cargar samples y crear patrones desde el REPL (extraídos de la documentación interna):
 
 ```javascript
 await samples({ 'aaahh': 'aaahh.mp3' }, 'https://raw.githubusercontent.com/gamurigm/samples/main/')
@@ -30,9 +63,7 @@ setcps(120/60/4)
 test_aaahh: n("<0 1 2>").s("aaahh").gain(0.9)
 ```
 
-Esto demuestra cargar samples remotos y probar su reproducción.
-
-También se muestra un ejemplo para cargar samples desde una red local (dirección IP en documentación):
+Ejemplo usando un servidor local de samples:
 
 ```javascript
 await samples({ 'aaahh': 'aaahh.mp3' }, 'http://172.18.224.1:5432/')
@@ -40,9 +71,9 @@ setcps(120/60/4)
 test_aaahh: n("<0 1 2>").s("aaahh").gain(0.9)
 ```
 
-Y una utilidad de procesamiento de audio documentada:
+Recorte/conversión rápida con ffmpeg:
 
-```bash
+```powershell
 ffmpeg -i input.wav -ss 00:00:00 -t 00:00:15 output.wav
 ```
 
@@ -62,7 +93,7 @@ ffmpeg -i input.wav -ss 00:00:00 -t 00:00:15 output.wav
 - Bancos: `.bank("Name")` aplica un prefijo de banco a tokens.
 - Tempo: `setcpm(...)`, `setcps(...)` controlan la relación temporal; ejemplo `setcpm(60)`.
 
-Ejemplo mínimo (tal como aparece en la documentación):
+Ejemplo mínimo:
 
 ```javascript
 setcpm(60)
@@ -73,6 +104,15 @@ note("g3 [bb3 c4]").s('moog').clip(1).gain(.5)
 Para detalles ampliados (voicings, pitch, compases y ejemplos interactivos) revisa `strudel/website/src/pages/understand/` y `strudel/website/src/repl/`.
 
 ---
+
+## Recursos y documentación interna
+
+- Comandos y ejemplos detallados: `./.github/instructions/commands.instructions.md`
+- Guía de contribución: `CONTRIBUTING.md`
+
+---
+
+Si quieres que actualice alguna sección concreta (traducción, ejemplos adicionales, o añadir un índice más detallado), dime qué prefieres y lo acomodo.
 
 
 
