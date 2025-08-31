@@ -105,14 +105,6 @@ Para detalles ampliados (voicings, pitch, compases y ejemplos interactivos) revi
 
 ---
 
-## Recursos y documentación interna
-
-- Comandos y ejemplos detallados: `./.github/instructions/commands.instructions.md`
-- Guía de contribución: `CONTRIBUTING.md`
-
----
-
-Si quieres que actualice alguna sección concreta (traducción, ejemplos adicionales, o añadir un índice más detallado), dime qué prefieres y lo acomodo.
 
 
 

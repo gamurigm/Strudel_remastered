@@ -27,6 +27,8 @@ all(x=>x
 
 
 
+
+
 //*********************************************************
 // SESSION #2 
 
@@ -176,7 +178,7 @@ drums: "<[0,1,2] 2@2 [0,2] [0,1,2] [0,2]@2 2@2 [2,[~ 1*2]] 2@2 [0,1,2] ~>/8".pic
 /////////////////////
 // SESSION #5 tomato 
 
-/*
+
 const keys = x => x.s('sawtooth').cutoff(1200).gain(.5)
   .attack(0).decay(.16).sustain(.3).release(.25);
 
@@ -216,7 +218,7 @@ stack(
   synths
 ).slow(2)
   ._pianoroll({minMidi:10})
-  */
+  
 
 
  ////////////////////////////////
@@ -232,9 +234,68 @@ setcps(120/60/4)
 test_aaahh: n("<0 1 2>").s("aaahh").gain(0.9)
 */
 
+//---------------------------------------------------------------------------
+/*
 await samples({
-    'kick': 'deep-808.mp3'
-  }, 'http://172.18.224.1:5432/')
+  'kick': 'kicks/808-kick-attic-d.mp3',
+  'hih':   'hihat/closed-hi-hat_B_minor.wav'
+}, 'http://172.18.224.1:5432/')
+//lo usamos solo si estamos en session web, para desktop usamos la notacion local, es decir el nombre de la subcarpeta específca en samples/ usando n() para escojer el sample que queremos de 0 a n
+*/
 
-setcps(130/60/4)
-kick: n("<0 1 2>").s("kicks").gain(0.9)
+
+
+//*************************************************************************************************** */
+//SESSION #7
+/*
+setCps(120/60/4)
+
+const accordi = x => x.note().s("gm_piano:13").gain(0.5).clip(1).release(0.5)  //1 10
+const melodia = x => x.note().s("gm_tenor_sax:1").gain(2).clip(1).release(0.1)._scope()
+const scala   = cat('d minor')
+
+
+harmony: stack(   
+  //|Gm7       |Bbmaj7    |Dm7       |Fmaj7 
+"<[2,3,5,13] [0,4,5,12] [-1,0,2,9] [1,2,4,11]>".scale(scala).apply(accordi),
+  "<[2@3 <-4 2>] [-1@3 [~ 4]] [<0 1 [[~ -1 -2 -3]]*2>]>"
+    .scale(scala).transpose(12).apply(melodia)
+).gain(2)._pianoroll({labels:1,strikeActive:1}) 
+
+
+drumsStack: stack(
+  n("[6 ~ ~ ~] [4 ~ ~ ~] [4 ~ ~ ~] [6 6 ~ ~ ~]").s("kicks").gain(0.9),
+  n("<~ 1 ~ 1 ~ 1 ~ 1>*8").s("hihat").gain(0.25)
+).gain(2.5)._pianoroll({fill:1,strikeActive:1})
+*/
+
+//
+//SESSION 8
+
+/*
+setCps(120/60/4)
+
+
+const bass = n("[3 ~ ~ ~] [5 ~ ~ ~] [0 ~ ~ ~] [2 ~ ~ ~]")  
+  .scale('d2:minor')              // tónica = D en la octava 2
+  .s('sawtooth')                  // timbre de bajo (puedes cambiar por 'fm_bass' o 'sub')                       // quita ultragraves/agudos molestos
+  .clip(0.96)                      // control dinámico
+  .gain(1.4)
+  .room(0.12)
+  .transpose(-12)                  // baja una octava para cuerpo (opcional)
+
+      //cada [xxxx]  en este ej  es un negra 
+drumsStack: stack(
+  //n("[6 ~ ~ ~] [4 ~ ~ ~] [4 ~ ~ ~] [6 6 ~ ~ ~]").s("kicks").gain(-5).lpf(4500),
+  //n("[~ ~ ~ ~] [0 ~ ~ ~] [~ ~ ~ ~] [0 ~ ~ ~]").s("clap").gain(0.9).clip(0.85).hpf(1000)      // elimina graves molestos
+    //.lpf(65400)   
+    //.room(0.1),
+
+      // .|
+    n("[~@8 0 0] [0 0 ~ 0] [~ 0 0 ~] [0*2 0 ~@2 0 ~  0 0]").s("clap").gain(1.25).clip(0.65).hpf(1000)      // elimina graves molestos
+    .lpf(65400)     
+    .room(0.1),
+  //n("<~ 1 ~ 1 ~ 1 ~ 1>*8").s("hihat").gain(1),
+  //n("< ~ 0 5 ~ 0 ~ 0 1 ~ 1 1 ~   ~ ~  ~ 1 ~ 0 ~~ ~1>*16").s("hihat").gain(5).room(.5)
+).gain(2.5)._pianoroll({fill:1,strikeActive:1})
+*/
