@@ -1,109 +1,154 @@
 
 # Strudel — resumen del proyecto y guía rápida
 
-Este README reúne instrucciones verificadas del repositorio sobre cómo compilar la aplicación de escritorio, ejecutar el REPL en modo desarrollo y una referencia concisa de la sintaxis usada en el REPL/Live-sessions.
+Este README recopila los pasos de arranque, scripts reales del monorepo y una referencia de sintaxis que evoluciona desde lo básico hasta técnicas avanzadas, alineado con los archivos de documentación y composiciones del repo.
 
 ## Resumen (rápido)
 
-- Repositorio: colección de paquetes y utilidades para un REPL de audio/ patrones (ver `packages/` y `website/`).
-- Ejemplos interactivos y páginas explicativas se encuentran en `strudel/website/src/pages/understand/` y `strudel/website/src/repl/`.
+- Monorepo con paquetes en `packages/` y el REPL/sitio en `website/`.
+- La documentación y ejemplos interactivos viven en `website/src/pages/` y el editor REPL en `website/src/repl/`.
 
 ---
 
 ## Requisitos
 
-- Node.js (16+ recomendado)
-- pnpm (para instalar dependencias y ejecutar scripts)
-- Rust + Cargo (solo si quieres compilar/ejecutar la app de escritorio basada en Tauri)
-- ffmpeg (opcional, para recortar/convertir samples)
+- Node.js LTS
+- pnpm (gestor de paquetes usado por el repo)
+- Rust + Cargo (solo si compilas la app de escritorio/Tauri)
+- ffmpeg (opcional para manipular audio)
 
-## Instalación
+## Quick Start (REPL / sitio)
 
-1. Instala dependencias de JavaScript desde la raíz del paquete `strudel`:
+Desde la carpeta `strudel/`:
 
 ```powershell
-pnpm install
+pnpm run setup     # instala dependencias (equivale a pnpm i)
+pnpm run repl      # inicia el REPL/sitio en modo dev
 ```
 
-2. (Opcional) Si vas a trabajar con la app de escritorio, asegúrate de tener Rust toolchain y las dependencias nativas instaladas.
+Build y preview del sitio:
+
+```powershell
+pnpm run build     # construye website y docs estáticas
+pnpm run preview   # sirve el build para pruebas locales
+```
+
+### Scripts útiles (paquete raíz)
+
+- `pnpm run test` / `test-ui` / `test-coverage`
+- `pnpm run bench` y `snapshot` (actualiza snapshots de tests)
+- `pnpm run osc` (servidor OSC en `packages/osc`)
+- `pnpm run sampler` (sirve la carpeta `samples/`)
+- `pnpm run lint` / `codeformat` / `check`
 
 ---
 
-## Desarrollo (REPL / sitio)
+## Cómo funciona el default tune del REPL
 
-- Ejecutar el entorno de desarrollo (REPL / sitio):
-
-```powershell
-pnpm dev [--port <PUERTO>]
-```
-
-Nota: algunos scripts aceptan la opción `--port`; revisa `package.json` en la raíz del paquete para confirmar los flags disponibles.
-
-## Aplicación de escritorio
-
-Comando documentado en `./.github/instructions/commands.instructions.md`.
-
-- Compilar/ejecutar la app de escritorio (ejemplo genérico cuando la app usa Tauri/Rust):
-
-```powershell
-cargo run --release
-```
-
-Nota: este comando indica que la app de escritorio puede usar Rust/Tauri; revisa `src-tauri/` o `packages/desktopbridge/` para confirmar la configuración y pasos concretos.
+El REPL carga por defecto el contenido de `website/src/repl/live-sessions/1_current_session.mjs`. Para cambiar lo que aparece al inicio, edita ese archivo.
 
 ---
 
-## Ejemplos de uso: samples y patrones
+## Sintaxis Esencial y Uso de Samples
 
-Los ejemplos siguientes ilustran cómo cargar samples y crear patrones desde el REPL (extraídos de la documentación interna):
+### Samples: uso rápido
 
+- Carpeta de trabajo: `strudel/samples/`.
+- Iniciar servidor local de samples: `pnpm run sampler`
+
+En el REPL:
 ```javascript
-await samples({ 'aaahh': 'aaahh.mp3' }, 'https://raw.githubusercontent.com/gamurigm/samples/main/')
+await samples({ aaahh: 'aaahh.mp3' }) // Carga desde el servidor local por defecto
 setcps(120/60/4)
-test_aaahh: n("<0 1 2>").s("aaahh").gain(0.9)
+n("<0 1 2>").s("aaahh").gain(0.9)
 ```
 
-Ejemplo usando un servidor local de samples:
+### Sintaxis de Patrones (extracto)
 
-```javascript
-await samples({ 'aaahh': 'aaahh.mp3' }, 'http://172.18.224.1:5432/')
-setcps(120/60/4)
-test_aaahh: n("<0 1 2>").s("aaahh").gain(0.9)
-```
+- `s("...")`: define un patrón.
+- Tokens: `bd`, `sd`, `hh`, etc.
+- Secuencia: ` ` (espacio).
+- Paralelo: `,`.
+- Silencio: `~`.
+- Repetición: `*n`.
+- Agrupación: `[...]`.
+- Alternancia: `< ... >`.
+- Tempo: `setcpm(...)` o `setcps(...)`.
 
-Recorte/conversión rápida con ffmpeg:
-
-```powershell
-ffmpeg -i input.wav -ss 00:00:00 -t 00:00:15 output.wav
-```
-
----
-
-## Resumen de la sintaxis esencial (extracto)
-
-- s("...") — define un patrón ejecutable en el REPL.
-- Tokens comunes: `bd`, `sd`, `rim`, `hh`, `oh`, `misc`, etc.
-- Separador temporal: espacios separan eventos; coma `,` separa capas simultáneas.
-- Silencio: `~` indica silencio en una posición del ciclo.
-- Repetición/distribución: `token*n` reparte `n` instancias del token a lo largo del ciclo.
-- Agrupación: `[...]` agrupa subpatrones.
-- Alternancia por ciclo: `< ... >` define variantes por ciclo.
-- Parámetros dinámicos: `rim*<1 2>` aplica multiplicadores que varían entre ciclos.
-- Selección de variantes: `.n("0 1 2")` o `token:idx` para variantes de muestra.
-- Bancos: `.bank("Name")` aplica un prefijo de banco a tokens.
-- Tempo: `setcpm(...)`, `setcps(...)` controlan la relación temporal; ejemplo `setcpm(60)`.
-
-Ejemplo mínimo:
-
+Ejemplo mínimo afinado:
 ```javascript
 setcpm(60)
-samples({ 'moog': { 'g3': 'moog/005_Mighty%20Moog%20G3.wav' } }, 'github:tidalcycles/dirt-samples')
+samples({ moog: { g3: 'moog/005_Mighty%20Moog%20G3.wav' } }, 'github:tidalcycles/dirt-samples')
 note("g3 [bb3 c4]").s('moog').clip(1).gain(.5)
 ```
 
-Para detalles ampliados (voicings, pitch, compases y ejemplos interactivos) revisa `strudel/website/src/pages/understand/` y `strudel/website/src/repl/`.
+---
+
+## Técnicas Avanzadas y Composición
+
+A medida que exploras, puedes combinar funciones para crear piezas más complejas y dinámicas.
+
+### 1. Modulación de Parámetros (LFOs y Envolventes)
+
+Para evitar que los sonidos sean estáticos, puedes modular sus parámetros usando señales como `sine`, `tri` o `perlin`.
+
+- **LFO en filtro o paneo**: `cutoff(sine.slow(8).range(800, 2500))` o `pan(sine.slow(6).range(0.1, 0.9))`
+- **Envolvente en un parámetro**: `.lpf_e(perlin.slow(8).range(1, 5))` aplica una envolvente al filtro.
+- **Patrón de ganancia**: `.patt("1 0.5 0.8 0.4")` crea un ritmo interno en la ganancia.
+
+### 2. Composición Estructural con `arrange`
+
+En lugar de un único `stack`, puedes definir diferentes secciones (`intro`, `verso`, `coro`) y organizarlas con `arrange`.
+
+```javascript
+const intro = stack(drums, bass);
+const fullSection = stack(drums, bass, harmony, melody);
+
+arrange([
+  [4, intro],       // Toca la intro por 4 ciclos
+  [8, fullSection]  // Luego la sección completa por 8 ciclos
+]);
+```
+
+### 3. Polirritmia y Polimetría
+
+Crea ritmos complejos superponiendo patrones de diferentes longitudes. La forma más sencilla es con `.slow()` o ajustando el número de eventos.
+
+```javascript
+// Batería con un patrón de 4/4 contra uno de 7/8
+const drums = stack(
+  s("bd ~ sd ~"), // 4/4
+  s("hh*7").slow(8/7) // 7 golpes en el espacio de un ciclo de 8
+);
+```
+
+### 4. Efectos Globales con `all()`
+
+Aplica un efecto a toda la mezcla para unificar el sonido.
+
+```javascript
+stack(drums, harmony, melody, bass)
+  .all(x => x.room(0.2)) // Aplica una reverb del 20% a todo
+```
+
+### Ejemplos de Estudio
+
+Para ver estas técnicas en acción, revisa las siguientes composiciones documentadas:
+
+-   `composition_docs/opus_synthesis.md`: Un estudio sobre composición modular, capas y voicings.
+-   `composition_docs/polyrhythmic_study.md`: Un ejemplo práctico de polirritmia, modulación con LFOs y estructura con `arrange`.
+-   `composition_docs/ameliewaltz_annotated.md`
+-   `composition_docs/keys_drums_synths_annotated.md`
+-   `composition_docs/rhythmofthenight_annotated.md`
 
 ---
+
+## Enlaces útiles
+
+- REPL online y tutorial: https://strudel.cc
+- Issues: https://codeberg.org/uzu/strudel/issues
+- Paquetes publicados: `packages/README.md`
+
 
 
 

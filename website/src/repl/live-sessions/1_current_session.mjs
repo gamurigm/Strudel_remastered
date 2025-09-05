@@ -178,7 +178,7 @@ drums: "<[0,1,2] 2@2 [0,2] [0,1,2] [0,2]@2 2@2 [2,[~ 1*2]] 2@2 [0,1,2] ~>/8".pic
 /////////////////////
 // SESSION #5 tomato 
 
-
+/*
 const keys = x => x.s('sawtooth').cutoff(1200).gain(.5)
   .attack(0).decay(.16).sustain(.3).release(.25);
 
@@ -205,7 +205,7 @@ const synths = stack(
   .struct("[x [~ x] <[~ [~ x]]!3 [x x]>@2]/2".fast(2))
   .s('sawtooth').attack(0.01).decay(0.2).sustain(1).cutoff(500)
   .color('brown'),
-  chord("<Cm7 Bb7b9 Fm7 [G7#9 G7b9 G7b13]>/2")
+  chord("<Cm7 Bb7 Fm7 [G7#9 G7b9 G7b13]>/2")
   .struct("~ [x@0.2 ~]".fast(2))
   .dict('lefthand').voicing()
   .every(2, early(1/8))
@@ -217,9 +217,9 @@ stack(
   drums.fast(2).color('tomato'), 
   synths
 ).slow(2)
-  ._pianoroll({minMidi:10})
+  .pianoroll({})
   
-
+*/
 
  ////////////////////////////////
  //SESSION 6 
@@ -271,31 +271,477 @@ drumsStack: stack(
 
 //
 //SESSION 8
-
 /*
-setCps(120/60/4)
+
+setCps(100/80/4)
 
 
-const bass = n("[3 ~ ~ ~] [5 ~ ~ ~] [0 ~ ~ ~] [2 ~ ~ ~]")  
-  .scale('d2:minor')              // tónica = D en la octava 2
-  .s('sawtooth')                  // timbre de bajo (puedes cambiar por 'fm_bass' o 'sub')                       // quita ultragraves/agudos molestos
-  .clip(0.96)                      // control dinámico
-  .gain(1.4)
-  .room(0.12)
-  .transpose(-12)                  // baja una octava para cuerpo (opcional)
 
       //cada [xxxx]  en este ej  es un negra 
 drumsStack: stack(
-  //n("[6 ~ ~ ~] [4 ~ ~ ~] [4 ~ ~ ~] [6 6 ~ ~ ~]").s("kicks").gain(-5).lpf(4500),
+  n("[6 ~ ~ ~] [4 ~ ~ ~] [4 ~ ~ ~] [6 6 ~ ~ ~]").s("kicks").gain(-1).lpf(4500),
   //n("[~ ~ ~ ~] [0 ~ ~ ~] [~ ~ ~ ~] [0 ~ ~ ~]").s("clap").gain(0.9).clip(0.85).hpf(1000)      // elimina graves molestos
-    //.lpf(65400)   
-    //.room(0.1),
+       
+   // .room(0.1),
 
       // .|
-    n("[~@8 0 0] [0 0 ~ 0] [~ 0 0 ~] [0*2 0 ~@2 0 ~  0 0]").s("clap").gain(1.25).clip(0.65).hpf(1000)      // elimina graves molestos
-    .lpf(65400)     
+    n("<[~@6 0 0] [0 0 ~ 0] [~ 0 0 ~] [~ ~ 0 0 ~ 0! ~] [0 ~ ~ 0 ~ 0 0 ~]/4 [0 ~ 0 0]>*2").s("clap").gain(1.25).clip(0.65).hpf(1000)      // elimina graves molestos
+         
     .room(0.1),
-  //n("<~ 1 ~ 1 ~ 1 ~ 1>*8").s("hihat").gain(1),
-  //n("< ~ 0 5 ~ 0 ~ 0 1 ~ 1 1 ~   ~ ~  ~ 1 ~ 0 ~~ ~1>*16").s("hihat").gain(5).room(.5)
-).gain(2.5)._pianoroll({fill:1,strikeActive:1})
+  //("<~ 1 ~ 1 ~ 1 ~ 1>*8").s("hihat").gain(1),
+  n("< ~ 0 5 ~ 0 ~ 0 1 ~ 1 1 ~   ~ ~  ~ 1 ~ 0 ~~ ~1>*16").s("hihat").gain(5).room(.5)
+).gain(0.9)._pianoroll({fill:1,strikeActive:1})
+
+*/ 
+
+
+/*
+// SESSION 9 
+
+setcpm(125/4);
+
+//Diccionario de voicings
+
+setDefaultVoicings('legacy');
+
+// --- PRESETS DE SÍNTESIS ---
+// Un preset para pads suaves y atmosféricos.
+const padKeys = p => p.s('triangle').cutoff(1800).gain(0.6)
+  .attack(0.2).decay(0.4).sustain(0.5).release(0.8)
+  .room(0.4).delay(0.5).dfb(0.4).dt(3/8);
+
+// Un preset para leads/arpegios, más brillante y percusivo.
+const leadKeys = p => p.s('sawtooth').cutoff(2500).gain(0.4)
+  .attack(0.01).decay(0.15).sustain(0.2).release(0.25)
+  .lpf(4000).lpr(0.2); // Filtro con resonancia para carácter.
+
+// Un preset para el bajo, profundo y con pegada.
+const bassSynth = p => p.s('sub').cutoff(600).gain(0.9)
+  .attack(0.01).decay(0.2).sustain(0.1).release(0.2)
+  .clip(0.9); // Ligera saturación para más cuerpo.
+
+// --- SECCIONES MUSICALES ---
+
+// 1. BATERÍA (DRUMS)
+
+const drums = stack(
+  // Bombo four-on-the-floor con una máscara para crear síncopa en el último pulso.
+  s("bd*4").mask("x*3 [x ~ x ~]").gain(0.9),
+  
+  // Caja en los pulsos 2 y 4, con un golpe fantasma.
+  s("~ sd ~ [sd sd]").velocity("<0.9 0.5>").gain(0.8),
+  
+  // Hi-hats cerrados con un patrón de ganancia para humanizar el ritmo.
+  s("hh*8").patt("0.8 0.6 1 0.7").gain(0.5),
+
+  // Hi-hat abierto en el off-beat.
+  s("~ oh").every(2, rev).gain(0.6)
+).color('coral');
+
+
+// 2. ARMONÍA (HARMONY)
+
+const harmony = chord("<Am G C F>/2")
+  .anchor("<c4 g3 e4 d4>/4") // Ancla móvil para guiar las inversiones.
+  .voicing()
+  .apply(padKeys) // Aplica el preset de pad.
+  .color('skyblue');
+
+
+// 3. MELODÍA (MELODY)
+
+const melody = n("0 2 3 5 7 5 3 2")
+  .scale("a:minor") // Fija la escala a La menor.
+  .layer(
+    // Capa 1: Melodía principal.
+    x => x.scaleTranspose(0).early(0),
+    // Capa 2: Una tercera arriba, ligeramente adelantada.
+    x => x.scaleTranspose(2).early(1/16).gain(0.7),
+    // Capa 3: Una octava arriba, para dar brillo.
+    x => x.transpose(12).early(1/8).gain(0.6)
+  )
+  .apply(leadKeys) // Aplica el preset de lead.
+  .mask("<x*4 ~*4>/2") // Toca durante la primera mitad de cada ciclo de 2 compases.
+  .color('mediumseagreen');
+
+
+// 4. BAJO (BASS)
+// Sigue las notas raíz de la progresión armónica.
+const bass = harmony.rootNotes()
+  .struct("[x ~]!4 [x x ~ x]") // Patrón rítmico para el bajo.
+  .apply(bassSynth)
+  .color('goldenrod');
+
+
+// --- MEZCLA FINAL ---
+// Apila todas las partes y aplica transformaciones globales.
+stack(
+  drums,
+  harmony,
+  melody,
+  bass
+).slow(2) // Ralentiza todo el conjunto a la mitad para un tempo final de 62.5 BPM.
+ .pianoroll({fold:1}) 
 */
+
+
+/*
+// -----------------------------------------------------------------
+// SESSION 10 — POLYRHYTHM STUDY
+// Explora superposiciones rítmicas: 7:8, 5:4 y 3:2 aplicadas a capas
+// distintas (hi-hats, percusión, melodía y bajo). Reusa los presets
+// `leadKeys` y `bassSynth` definidos en la sesión anterior.
+
+setcpm(120/4);
+
+// Presets locales para esta sesión (evita depender de otras sesiones)
+const polyLeadKeys = p => p.s('sawtooth').cutoff(2500).gain(0.4)
+  .attack(0.01).decay(0.15).sustain(0.2).release(0.25)
+  .lpf(4000).lpr(0.2);
+
+const polyBassSynth = p => p.s('sub').cutoff(600).gain(0.9)
+  .attack(0.01).decay(0.2).sustain(0.1).release(0.2)
+  .clip(0.9);
+
+// Percusión polirrítmica: 7 golpes en el espacio de 8 (7:8) sobre hi-hats,
+// y 5 golpes en el espacio de 4 (5:4) en una percusión secundaria.
+const polyPerc = stack(
+  s("bd*4").mask("x*4").gain(1),
+  s("hh*7").slow(8/7).patt("1 0.6 0.8 0.6 0.9 0.7 0.5").gain(0.45),
+  s("oh*5").slow(4/5).gain(0.6).delay(0.02).dfb(0.2)
+).color('coral');
+
+// Melodía con frase de 5 notas que corre a 5/4 (5 eventos en lugar de 4)
+// creando un pulso que se desplaza respecto al compás base.
+const polyMelody = n("<0 2 3 5 7>")
+  .scale("a:minor")
+  .slow(5/4) // 5:4 polyrhythm
+  .layer(
+    x => x.scaleTranspose(0).early(0),
+    x => x.transpose(12).early(1/8).gain(0.6)
+  )
+  .apply(polyLeadKeys)
+  .mask("<x ~ x ~ x>/2")
+  .color('mediumseagreen');
+
+// Bajo en relación 3:2 (más lento — tres golpes en el tiempo de dos ciclos base)
+const polyBass = n("0 ~ 0 ~")
+  .scale("a:minor")
+  .slow(3/2) // 3:2 polyrhythm
+  .apply(polyBassSynth)
+  .gain(1.2)
+  .color('goldenrod');
+
+// Mezcla final para la sesión polirrítmica. Añadimos una pequeña reverb
+// global y un paneo LFO para visualizar movimiento en el pianoroll.
+stack(
+  polyPerc,
+  polyMelody,
+  polyBass
+)
+  .apply(p => p.room(0.25)) // Aplica reverb a todos los elementos del stack
+  .every(16, x => x.pan(sine.slow(4).range(0.1, 0.9)))
+  ._pianoroll({fold:1, labels:1})
+*/
+
+
+/*
+// -----------------------------------------------------------------
+// SESSION 11 — RHYTHMIC EXPLORATION
+// Foco exclusivo en percusión: síncopas, acentos dinámicos, fills.
+
+setcpm(110/4);
+
+// Capa base: bombo y caja sincopados
+const kickSnare = stack(
+  s("bd ~ [~ bd] ~").mask("x*2 [x ~]").gain(1.1),
+  s("~ sd ~ sd").gain(0.95)
+).color('coral');
+
+// Texturas: hats con acentos, shaker y clap con eco
+const hatsPerc = stack(
+  s("hh*8").patt("1 0.7 0.9 0.6 1 0.8 0.9 0.7").gain(0.6),
+  s("~*3 [~ shaker]").slow(2).gain(0.5),
+  s("~ cp").every(4, rev).gain(0.8).delay(0.3).dfb(0.4).dt(1/6)
+).color('skyblue');
+
+// Efectos rítmicos: tom ocasional y stutter en la caja como fill
+const fillsFx = stack(
+  s("lt").mask("<~*7 x>/4").gain(0.7),
+  // Fill de 1/16 en el último cuarto del ciclo sin usar stutter
+  s("sd*4").fast(4).mask("<~*3 x>/4").gain(1)
+).color('goldenrod');
+
+// Mezcla final puramente rítmica
+stack(
+  kickSnare,
+  hatsPerc,
+  fillsFx
+)
+  ._pianoroll({fold:1, labels:1}) */
+
+// -----------------------------------------------------------------
+// SESSION 12 — SIMPLE BEAT
+// Un patrón 4/4 básico de bombo, caja y hi-hat con acentos sutiles.
+/*
+setcpm(120/4);
+
+const hats12 = n("0*8").s("hihat")
+  .patt("0.9 0.7 0.8 0.7 0.9 0.7 0.8 0.7")
+  .gain(0.35)
+  .every(4, rev); // variación sutil cada 4 ciclos
+
+const simpleBeat = stack(
+  n("6 ~ 6 ~").s("kicks").gain(0.9).lpf(4500),          // kick (banco 'kicks')
+  n("~ 0 ~ 0").s("clap").gain(1.0).clip(0.7).hpf(900),  // clap (banco 'clap')
+  hats12                                                // hihat (banco 'hihat')
+).gain(1.0).color('lightsteelblue');
+
+simpleBeat._pianoroll({fill:1, strikeActive:1, labels:1})
+*/
+
+
+// -----------------------------------------------------------------
+// SESSION 13 — DEEP HOUSE (simple, con bancos de samples como la sesión 8)
+/*
+setcpm(122/4);
+
+// Hi-hat cerrado a corcheas con acentos sutiles
+const dhHats = n("1*8").s("hihat")
+  .patt("1 0.7 0.85 0.7 1 0.7 0.85 0.7")
+  .gain(0.35);
+
+// Hi-hat abierto en el off‑beat
+const dhOpen = n("~ 5 ~ 5 ~ 5 ~ 5").s("hihat")
+  .gain(0.45).lpf(9000).room(0.2);
+
+// Bombo 4/4 y clap en 2 y 4
+const session13 = stack(
+  n("6*4").s("kicks").gain(0.95).lpf(5000),     // kick en cada negra
+  n("~ 0 ~ 0").s("clap").clip(0.7).hpf(900).gain(1.0), // clap en 2 y 4
+  dhHats,
+  dhOpen
+).gain(1.0).color('lightskyblue');
+
+session13._pianoroll({fill:1, strikeActive:1, labels:1});
+*/
+
+/*************************************************************
+ 
+ /*
+// SESSION 14 — TRIO INVENTION (Andante)
+// Tres voces en un estilo contrapuntístico, con un tempo más lento.
+
+setcpm(23/4); // Tempo Andante
+
+const baroqueOrgan = p => p.s('piano')
+  .attack(0.01).decay(0.1).sustain(0.7).release(0.2)
+  .lpf(2000).gain(0.6).room(0.1);
+
+// Sujeto (melodía principal) en Do menor
+const subject = n("0 2 3 5 4 3 2 1 0 -1 2 0")
+  .scale("c4:minor")
+  .fast(2)
+  .apply(baroqueOrgan);
+
+// Voz 1 (Soprano): Sujeto en la tónica, paneado a la derecha.
+const voice1 = subject.pan(0.8);
+
+// Voz 2 (Alto): Respuesta en la dominante, entra 1 ciclo después, paneado a la izquierda.
+const voice2 = subject.scaleTranspose(2).late(1).pan(0.2);
+
+// Voz 3 (Bajo): Línea de bajo melódica que entra 2 ciclos después, centrada.
+const bassLine = n("0 -3 -4 -5 0 -3 -4 -5")
+  .scale("c3:minor")
+  .slow(0.5) // Se mueve a la mitad de la velocidad del sujeto
+  .late(2)
+  .apply(baroqueOrgan)
+  .pan(0.5)
+  .gain(0.8);
+
+// Mezcla final de las tres voces
+stack(voice1, voice2, bassLine)
+  ._pianoroll({fold:1, labels:1})
+*/
+
+// -----------------------------------------------------------------
+// SESSION 15
+/*
+setcpm(60/4); // 60 BPM, 4 pulsos por ciclo
+
+// Preset coral
+const choralePreset = p => p
+  .s('sawtooth').cutoff(1800).lpr(0.1)
+  .attack(0.1).release(0.6)
+  .gain(0.8).room(0.25);
+
+// Usa note() para alturas absolutas (g4, eb4, etc.)
+const soprano = note("g4 g4 ab4 g4 f4 eb4 d4 c4").apply(choralePreset).pan(0.2);
+const alto    = note("eb4 d4 c4 eb4 c4 c4 b3 c4").apply(choralePreset).pan(0.4);
+const tenor   = note("c4 b3 f3 g3 ab3 g3 g3 g3").apply(choralePreset).pan(0.6);
+const bass    = note("c3 g2 ab2 eb2 f2 c3 g2 c3").apply(choralePreset).pan(0.8);
+
+stack(soprano, alto, tenor, bass)
+  ._pianoroll({ minMidi:36, maxMidi:84, labels:1 })
+*/
+
+/*
+const sopranoInst = p => p.s('sawtooth').cutoff(2400).lpr(0.15).attack(0.02).release(0.5).gain(0.85).room(0.2);
+const altoInst    = p => p.s('triangle').cutoff(1800).attack(0.03).release(0.5).gain(0.75).room(0.2);
+const tenorInst   = p => p.s('square').cutoff(1600).attack(0.02).release(0.5).gain(0.7).room(0.2);
+const bassInst    = p => p.s('sub').cutoff(600).attack(0.01).release(0.5).gain(0.9).room(0.15);
+
+// Voces (usar note() para alturas absolutas)
+const soprano = note("g4 g4 ab4 g4 f4 eb4 d4 c4").apply(sopranoInst).pan(0.15);
+const alto    = note("eb4 d4 c4 eb4 c4 c4 b3 c4").apply(altoInst).pan(0.35);
+const tenor   = note("c4 b3 f3 g3 ab3 g3 g3 g3").apply(tenorInst).pan(0.65);
+const bass    = note("c3 g2 ab2 eb2 f2 c3 g2 c3").apply(bassInst).pan(0.85);
+
+// Mezcla
+stack(soprano, alto, tenor, bass)
+  ._pianoroll({ minMidi:36, maxMidi:84, labels:1 })
+  */
+
+
+/*
+  // SESSION 16 — CHORDS STUDY (piano simple)
+  setcpm(120/4);
+  setDefaultVoicings('legacy');
+  const stab16 = p => p
+    .s('gm_piano').attack(0.01).release(0.25).lpf(2200).gain(0.8);
+
+  const prog16 = "<Dm7 Bbmaj7 Gm7 A7>/2";
+
+  const simplePiano16 = chord(prog16)
+    .anchor('d4')          // centra las inversiones cerca de D4
+    .dict('lefthand')      // voicings simples, cerrados
+    .voicing()
+    .apply(stab16)
+    .gain(0.7);
+
+const drums16 = stack(
+  
+  s("kicks:2*4").mask("x*3 [x ~ x ~]").gain(0.95),
+  s("~ sd ~ sd").gain(0.85),
+  s("hihat:2*8").patt("1 0.7 0.85 0.1 1 0.7 0.85 0.7").gain(0.45),
+  // Hi‑hat abierto en el off‑beat, suave
+  //s("~ oh ~ oh").lpf(9000).room(0.2).gain(0.4)
+).color('lightsteelblue');
+
+stack(
+  simplePiano16,
+  drums16
+)._pianoroll({ fold:1, labels:1 })
+*/
+
+
+/*
+setcpm(60/4); // Andante
+
+// Presets por voz (sección de metales)
+const brassSop  = p => p.s('gm_trumpet').attack(0.02).release(0.6).lpf(2800).gain(0.85).room(0.2);
+const brassAlto = p => p.s('gm_french_horn').attack(0.03).release(0.6).lpf(2400).gain(0.8).room(0.2);
+const brassTen  = p => p.s('gm_trombone').attack(0.03).release(0.6).lpf(2200).gain(0.75).room(0.2);
+const brassBass = p => p.s('gm_tuba').attack(0.04).release(0.7).lpf(2000).gain(0.8).room(0.2);
+
+// Progresión implícita: Dm7 – Bbmaj7 – Gm7 – A7 (ii–VI–i–V) y repite
+// Líneas SATB (homofónicas), 8 pasos por ciclo
+const soprano17 = note("a4 bb4 g4 e4  a4 bb4 g4 e4").apply(brassSop).pan(0.15);
+const alto17    = note("f4 d4 bb3 c#4  f4 d4 bb3 c#4").apply(brassAlto).pan(0.35);
+const tenor17   = note("a3 f3 d3 c#3  a3 f3 d3 c#3").apply(brassTen).pan(0.65);
+const bass17    = note("d3 bb2 g2 a2  d3 bb2 g2 a2").apply(brassBass).pan(0.85);
+
+// Mezcla
+stack(soprano17, alto17, tenor17, bass17)
+  ._pianoroll({ minMidi:36, maxMidi:84, labels:1 })
+
+  
+*/
+
+
+
+/*
+// SESSION 18 — CHORDS & CHORALE
+// Combina un pad de acordes con un coral de metales a cuatro voces.
+setcpm(70/4); // Tempo lento
+setDefaultVoicings('legacy');
+
+// --- PRESETS ---
+// Pad suave para la base armónica
+const pad18 = p => p.s('triangle').cutoff(1600).attack(1.5).release(2.5).gain(0.5).room(0.4);
+
+// Presets para el coral de metales
+const brassSop18  = p => p.s('gm_trumpet').attack(0.1).release(1.2).lpf(2800).gain(0.8).room(0.3);
+const brassAlto18 = p => p.s('gm_french_horn').attack(0.15).release(1.2).lpf(2400).gain(0.7).room(0.3);
+const brassTen18  = p => p.s('gm_trombone').attack(0.15).release(1.2).lpf(2200).gain(0.6).room(0.3);
+const brassBass18 = p => p.s('gm_tuba').attack(0.2).release(1.5).lpf(2000).gain(0.7).room(0.3);
+
+// --- PARTES MUSICALES ---
+// 1. Acordes (Pads)
+const prog18 = "<Dm7 Bbmaj7 Gm7 Am7>/2";
+const harmonyPads = chord(prog18)
+  .voicing()
+  .apply(pad18)
+  .color('cyan');
+
+// 2. Coral (Metales)
+// Las líneas melódicas siguen la armonía de los pads.
+const soprano18 = note("a4 a4 g4 g4 | f4 e4 e4 e4").apply(brassSop18).pan(0.2);
+const alto18    = note("f4 f4 d4 d4 | d4 c#4 c#4 c#4").apply(brassAlto18).pan(0.4);
+const tenor18   = note("c4 d4 bb3 bb3 | g3 g3 a3 a3").apply(brassTen18).pan(0.6);
+const bass18    = note("d3 bb2 g2 a2 | d3 bb2 g2 a2").apply(brassBass18).pan(0.8);
+
+const chorale18 = stack(soprano18, alto18, tenor18, bass18);
+
+// --- MEZCLA FINAL ---
+stack(
+  harmonyPads,
+  chorale18.mask("<~ x ~ x>") // El coral entra en los tiempos 2 y 4 para dar espacio
+)._pianoroll({ minMidi:36, maxMidi:84, labels:1 })
+
+*/
+
+
+setcpm(128/4);
+
+// --- PRESETS CON MODULACIÓN ---
+// Preset de Pad cuyo filtro y paneo se mueven con LFOs.
+const evolvingPad = p => p.s('piano').attack(0.5).release(1.5)
+  .cutoff(perlin.slow(12).range(800, 2500)) // Filtro se mueve orgánicamente
+  .pan(sine.slow(8).range(0.1, 0.9))       // Paneo lento de lado a lado
+  .gain(1).room(0.4);
+
+// Preset de Lead con un vibrato que cambia de velocidad.
+const leadVoice = p => p.s('organ_8inch').release(0.4)
+  .vib(8).vibmod(perlin.slow(7).range(0.1, 0.8)) // Vibrato irregular
+  .gain(0.5).lpf(3000);
+
+
+// 1. BASE RÍTMICA (en 4/4)
+const rhythmBase = stack(
+  s("kicks:4 ~ cp ~").gain(1),
+  s("<~ hihat:4>*8").patt("2 0.6").gain(1.5)
+).color('coral');
+
+// 2. ARMONÍA (en 7/4)
+
+const harmony7_4 = chord("<Am7 Gmaj7 Cmaj7 Fmaj7 Dm7 G7 Cmaj7>")
+  .slow(7/4) // 7 acordes en el espacio de 4
+  .voicing()
+  .apply(evolvingPad)
+  .color('skyblue');
+
+// 3. MELODÍA (en 5/4)
+
+const melody5_4 = n("~ 0@4 ~@8")
+  .scale("c4:major")
+  .slow(5/4) 
+  .apply(leadVoice)
+  .delay(0.4).dfb(0.5).dt(3/8) // Eco para llenar espacio
+  .color('mediumseagreen');
+
+stack(
+  rhythmBase,
+  harmony7_4,
+  melody5_4
+)._pianoroll({fold:1, labels:1})
