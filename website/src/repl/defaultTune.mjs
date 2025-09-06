@@ -2,7 +2,7 @@
 // This strips `export` lines and, if present, extracts the inner body of `export function applySession() { ... }`
 // import the session file as raw text so we can strip exports and use the code
 // as an editor default. Vite serves file contents with the `?raw` suffix.
-import sessionRaw from "./live-sessions/1_current_session.mjs?raw";
+import sessionRaw from "./live-sessions/2_current_session.mjs?raw";
 
 function stripExports(src) {
   if (!src) return src;

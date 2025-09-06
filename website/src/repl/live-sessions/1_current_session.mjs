@@ -702,46 +702,90 @@ stack(
 */
 
 
-setcpm(128/4);
+// SESSION 19 
+setCps(113/60/4)
 
-// --- PRESETS CON MODULACIÓN ---
-// Preset de Pad cuyo filtro y paneo se mueven con LFOs.
-const evolvingPad = p => p.s('piano').attack(0.5).release(1.5)
-  .cutoff(perlin.slow(12).range(800, 2500)) // Filtro se mueve orgánicamente
-  .pan(sine.slow(8).range(0.1, 0.9))       // Paneo lento de lado a lado
-  .gain(1).room(0.4);
+await samples({'gtr': 'gtr/0001_cleanC.wav'}, 'github:tidalcycles/Dirt-Samples/master/');
 
-// Preset de Lead con un vibrato que cambia de velocidad.
-const leadVoice = p => p.s('organ_8inch').release(0.4)
-  .vib(8).vibmod(perlin.slow(7).range(0.1, 0.8)) // Vibrato irregular
-  .gain(0.5).lpf(3000);
+const guitar    = x => x.note().s("gtr").room(.7).gain(0.5).clip(1).release(0.5).delay(0.55)
+const accordi   = x => x.note().s("gm_tremolo_strings:3").gain(0.2).clip(1).release(0.5)
+const basso     = x => x.note().s("subs:1").gain(1.2).clip(1).sustain(0.95).delay(0.25)
+const ritmo     = x => x.bank("AlesisHR16").clip(1).gain(0.75)
 
-
-// 1. BASE RÍTMICA (en 4/4)
-const rhythmBase = stack(
-  s("kicks:4 ~ cp ~").gain(1),
-  s("<~ hihat:4>*8").patt("2 0.6").gain(1.5)
-).color('coral');
-
-// 2. ARMONÍA (en 7/4)
-
-const harmony7_4 = chord("<Am7 Gmaj7 Cmaj7 Fmaj7 Dm7 G7 Cmaj7>")
-  .slow(7/4) // 7 acordes en el espacio de 4
-  .voicing()
-  .apply(evolvingPad)
-  .color('skyblue');
-
-// 3. MELODÍA (en 5/4)
-
-const melody5_4 = n("~ 0@4 ~@8")
-  .scale("c4:major")
-  .slow(5/4) 
-  .apply(leadVoice)
-  .delay(0.4).dfb(0.5).dt(3/8) // Eco para llenar espacio
-  .color('mediumseagreen');
-
+const scala = cat('c major')  // IV VI I III
 stack(
-  rhythmBase,
-  harmony7_4,
-  melody5_4
-)._pianoroll({fold:1, labels:1})
+//"<[5,13,7] [5,9,11] [0,9,13] [6,13,14]>".scale(scala).apply(accordi).delay(2),
+//"~@2 2 <[7,5,3 9 6 6][7 5 3 6,4 <[2,6,4 0]>]>@2 2 <8,11 6,13 4,9 14>@2".scale(scala).transpose(-5).apply(guitar),
+//"<-5 -2 0 -1>".struct("[[x ~]!2 x x@0.5 [x ~]!2 x@0.5 [x ~]!2]").scale(scala).apply(basso),
+//s("bd!4,[~ sd]!2,[~ hh!2 hh*2]!2").apply(ritmo).room(0.1).delay(.2),
+//s("hh!7 <~@3 hh*5 ~@3 hh*3  hh!2>").patt("0.1 0.5 1.5 1 1 0.9 0.9 2") .apply(ritmo).gain(3.5)  
+)._pianoroll({minMidi:10, labels:1, strikeActive:1})
+
+
+
+/*
+// "She don't use jelly" (work in progress)
+// composed @by The Flaming Lips
+// script @by eefano
+const gString = register('gString', (n,tuning, pat) => 
+  (pat.fmap((v) => { if(v[n]=='x') return note(0).velocity(0);
+      return note(v[n]+tuning[n]); } 
+  ).innerJoin()));
+const guitar = (strums,fingers,tuning=[40,45,50,55,59,64]) => (strums.pickOut(
+    [fingers.pickOut(fingering).gString(0,tuning),fingers.pickOut(fingering).gString(1,tuning),fingers.pickOut(fingering).gString(2,tuning)
+    ,fingers.pickOut(fingering).gString(3,tuning),fingers.pickOut(fingering).gString(4,tuning),fingers.pickOut(fingering).gString(5,tuning)]));
+const split = register('split', (deflt, callback, pat) => callback(deflt.map((d,i)=> pat.withValue((v)=>{
+  const isobj = v.value !== undefined; const value = isobj ? v.value : v;
+  const result = Array.isArray(value)?(i<value.length?value[i]:d):(i==0?value:d);
+  return (i==0 && isobj) ? {...v,value:result} : result; }))));
+
+setCps(86 / 60 )
+const fingering = 
+{D5:"x:5:7:7:x:x",G5:"3:5:5:x:x:x",A5:"5:7:7:x:x:x",
+ D:"10:12:12:11:10:10",C:"8:10:10:9:8:8",G:"3:5:5:4:3:3",A:"5:7:7:6:5:5"
+};
+const sk = 300, sh = silence, strumming = 
+{d: stack(0,timeCat([1,sh],[sk,1]),timeCat([2,sh],[sk,2]),timeCat([3,sh],[sk,3]),timeCat([4,sh],[sk,4]),timeCat([5,sh],[sk,5]))
+,u: stack(5,timeCat([1,sh],[sk,4]),timeCat([2,sh],[sk,3]),timeCat([3,sh],[sk,2]),timeCat([4,sh],[sk,1]),timeCat([5,sh],[sk,0]))
+};
+const song = "<0 1@8 2>/4"
+
+lead: song.pickRestart(
+  ["<~ ~ ~ [~ c4:7:.5]>"
+  ,"<f#4 f#4*2 [a4:3:.1 f#4:-2:.1] [e4 f#4@2:3:.1 f#4]@2 f#4*2 [g4 f#4] [c#5:-2:.1 e4:2:1] >"
+  ,"<f#4 ~@3>"
+  ]).as("note:penv:patt").release(song.pickRestart([0,0,2]))
+  .s("gm_overdriven_guitar:11").color('magenta').gain(.55).hpf(400).lpf(5000).pan(.5)
+
+rthm: song.pickRestart(
+  ["~"
+  ,"<D5:d [D5:d D5:u] G5:d [G5:d A5:u@2 A5:d]@2 [G5:d G5:u] [A5:d A5:u] [G5:d ~]>"
+  ,"<D5:d ~@3>"
+  ]).split([0,0],s=>guitar(s[1].pickRestart(strumming),s[0]).transpose(-12)
+  .release(song.pickRestart([.1,.1,2]))
+  .s("gm_overdriven_guitar:6").color('cyan').hpf(700).lpf(6000)).gain(1.5).pan(.4)
+
+bass: song.pickRestart(
+  ["~"
+  ,note("<d2 d2*2 g1*2 [g1 a1@2 a1]@2 g1*2 a1*2 [g1 ~]>")
+  ,"~"
+  ]).s("gm_electric_bass_finger").color('green').lpf(500).dist("4:.25")
+ 
+drum: song.pickRestart(
+  ["~"
+  ,"<cr,[hh!15 oh],[bd sd bd*2 [sd bd] [~ sd] [bd ~] [sd bd] [bd sd]]>/8"
+  ,"<cr,bd>/4"
+]).pickOut({
+  bd:s('linndrum_bd').hpf(50).lpf(2000).velocity(.8),
+  sd:s('linndrum_sd').hpf(200).velocity(.7),
+  hh:s('linndrum_hh').hpf(7000).speed(1.5).velocity(.3),
+  oh:s('linndrum_oh').hpf(7000).speed(1.1).velocity(.3),
+  cr:s('linndrum_cr').hpf(7000).speed(1.2).velocity(.3),
+}).color('yellow').gain(1.2)
+
+all(x=>x.rsize(.8).room(1.3)
+  //  .ribbon(1*4,2*4)
+  )
+
+
+  */
