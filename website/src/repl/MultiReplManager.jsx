@@ -263,34 +263,33 @@ export default function MultiReplManager() {
         >
           <PlusIcon className="w-4 h-4" />
         </button>
-        <div className="ml-auto text-[10px] text-neutral-500 flex gap-2 pr-2 items-center">
+        <div className="ml-auto flex gap-2 pr-1 items-center">
           <button
             onClick={playAll}
             disabled={contextsRef.current.size === 0}
             className={[
-              'px-2 py-1 rounded-md flex items-center gap-1 font-semibold tracking-tight',
+              'h-7 w-7 rounded-full flex items-center justify-center transition-all border',
               contextsRef.current.size === 0
-                ? 'bg-neutral-800/40 text-neutral-600 cursor-not-allowed'
-                : 'bg-gradient-to-br from-lime-600/80 to-lime-500/70 text-white hover:from-lime-500 hover:to-lime-400 shadow hover:shadow-md'
+                ? 'border-neutral-700/40 text-neutral-600 cursor-not-allowed'
+                : 'border-lime-400/30 text-lime-300 hover:text-lime-100 hover:border-lime-300 hover:shadow-[0_0_0_2px_rgba(163,230,53,0.25)] bg-neutral-800/40'
             ].join(' ')}
             title="Reproducir todos"
           >
-            <PlayIcon className="w-3 h-3" /> Todos
+            <PlayIcon className="w-4 h-4" />
           </button>
-            <button
+          <button
             onClick={stopAll}
             disabled={contextsRef.current.size === 0}
             className={[
-              'px-2 py-1 rounded-md flex items-center gap-1 font-semibold tracking-tight',
+              'h-7 w-7 rounded-full flex items-center justify-center transition-all border',
               contextsRef.current.size === 0
-                ? 'bg-neutral-800/40 text-neutral-600 cursor-not-allowed'
-                : 'bg-gradient-to-br from-red-700/80 to-red-600/70 text-neutral-100 hover:from-red-600 hover:to-red-500 hover:text-white shadow hover:shadow-md'
+                ? 'border-neutral-700/40 text-neutral-600 cursor-not-allowed'
+                : 'border-red-400/30 text-red-300 hover:text-red-100 hover:border-red-300 hover:shadow-[0_0_0_2px_rgba(248,113,113,0.25)] bg-neutral-800/40'
             ].join(' ')}
             title="Detener todos"
           >
-            <PauseIcon className="w-3 h-3" /> Todos
+            <PauseIcon className="w-4 h-4" />
           </button>
-          <span className="opacity-60 hidden md:inline">Canales simultáneos</span>
         </div>
       </div>
       <div className="relative flex-1 overflow-hidden">
