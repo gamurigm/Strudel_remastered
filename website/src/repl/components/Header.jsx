@@ -2,6 +2,9 @@ import PlayCircleIcon from '@heroicons/react/20/solid/PlayCircleIcon';
 import StopCircleIcon from '@heroicons/react/20/solid/StopCircleIcon';
 import EyeIcon from '@heroicons/react/20/solid/EyeIcon';
 import EyeSlashIcon from '@heroicons/react/20/solid/EyeSlashIcon';
+import SpeakerWaveIcon from '@heroicons/react/20/solid/SpeakerWaveIcon';
+import ArrowPathIcon from '@heroicons/react/20/solid/ArrowPathIcon';
+import BookOpenIcon from '@heroicons/react/20/solid/BookOpenIcon';
 import cx from '@src/cx.mjs';
 import { useSettings, setIsZen, settingsMap } from '../../settings.mjs';
 import { useState, useEffect, useRef } from 'react';
@@ -12,8 +15,7 @@ const { BASE_URL } = import.meta.env;
 const baseNoTrailing = BASE_URL.endsWith('/') ? BASE_URL.slice(0, -1) : BASE_URL;
 
 export function Header({ context, embedded = false }) {
-  const { started, pending, isDirty, activeCode, handleTogglePlay, handleEvaluate, handleShuffle, handleShare } =
-    context;
+  const { started, pending, isDirty, activeCode, handleTogglePlay, handleEvaluate } = context; // removed unused items
   const isEmbedded = typeof window !== 'undefined' && (embedded || window.location !== window.parent.location);
   const { isZen, isButtonRowHidden, isCSSAnimationDisabled, fontFamily } = useSettings();
   const [hidden, setHidden] = useState(false);
@@ -85,17 +87,19 @@ export function Header({ context, embedded = false }) {
         ref={dragRef}
         onPointerDown={startDrag}
         className={cx(
-          'fixed z-[100] bg-black/50 backdrop-blur-sm text-white rounded-full shadow-md',
-          'px-3 py-1 text-sm flex items-center space-x-2 select-none cursor-move'
+          'fixed z-[100] select-none cursor-move group',
+          'rounded-full px-2 py-1 text-white/80 shadow-lg backdrop-blur-sm',
+          'bg-black/50 border border-white/15'
         )}
         style={{ fontFamily, left: 0, top: 0, transform: `translate3d(${position.x}px, ${position.y}px, 0)` }}
       >
         <button
           onClick={() => setHidden(false)}
-          title="show controls"
-          className="flex items-center space-x-1 hover:opacity-70"
+          title="mostrar controles"
+          className="flex items-center gap-1 text-xs font-medium hover:text-white transition-colors"
         >
-          <EyeIcon className="w-4 h-4" /> <span>show</span>
+          <EyeIcon className="w-4 h-4" />
+          <span className="tracking-wide">show</span>
         </button>
       </div>
     );
@@ -122,44 +126,49 @@ export function Header({ context, embedded = false }) {
       ref={dragRef}
       onPointerDown={startDrag}
       className={cx(
-        'fixed',
-        'z-[100] text-lg select-none',
-        'bg-black/50 text-white backdrop-blur-sm',
-        'rounded-full px-3 py-2',
-        'flex items-center justify-center shadow-lg'
+        'fixed z-[100] select-none',
+        'flex items-center justify-center gap-1 md:gap-2',
+        'px-3 py-2 rounded-2xl shadow-2xl',
+        'backdrop-blur-sm border border-white/10',
+        'bg-black/50 text-white',
+        'transition-colors transition-shadow duration-300',
+        started && 'ring-2 ring-lime-400/60 shadow-[0_0_0.75rem_-0.1rem_rgba(163,230,53,0.35)]'
       )}
       style={{ fontFamily, left: 0, top: 0, transform: `translate3d(${position.x}px, ${position.y}px, 0)` }}
     >
-      {/* hide button */}
       <button
         onClick={() => setHidden(true)}
-        title="hide controls"
-        className="absolute -top-2 -right-2 bg-black/70 text-white rounded-full p-1 hover:opacity-70"
+        title="ocultar"
+        className={cx(
+          'absolute -top-2 -right-2 p-1 rounded-full',
+          'bg-white/15 hover:bg-white/25 text-white/80 hover:text-white shadow-md',
+          'backdrop-blur-xl border border-white/20'
+        )}
       >
         <EyeSlashIcon className="w-4 h-4" />
+        <span className="sr-only">hide</span>
       </button>
-  {!isButtonRowHidden && (
-        <div className="flex max-w-full overflow-auto px-1 md:px-2">
+      {!isButtonRowHidden && (
+        <div className="flex items-center max-w-full overflow-x-auto no-scrollbar">
+          {/* Play / Stop */}
           <button
             onClick={handleTogglePlay}
             title={started ? 'stop' : 'play'}
             className={cx(
-              !isEmbedded ? 'p-2' : 'px-2',
-              'hover:opacity-70 transition-opacity',
-              !started && !isCSSAnimationDisabled && 'animate-pulse',
+              'relative p-1.5 rounded-xl transition',
+              'hover:bg-white/15 active:scale-95',
+              !started && !isCSSAnimationDisabled && 'animate-pulse'
             )}
           >
             {!pending ? (
-              <span className={cx('flex items-center')}>
-                {started ? <StopCircleIcon className="w-6 h-6" /> : <PlayCircleIcon className="w-6 h-6" />}
-              </span>
+              started ? <StopCircleIcon className="w-7 h-7 drop-shadow" /> : <PlayCircleIcon className="w-7 h-7 drop-shadow" />
             ) : (
-              <>loading...</>
+              <span className="text-xs px-2">…</span>
             )}
           </button>
-          {/* compact master volume control */}
-          <div className="flex items-center px-2" style={{ minWidth: 120 }}>
-            <label className="text-sm mr-2 opacity-75">Vol</label>
+          {/* Volume */}
+          <div className="flex items-center gap-1 px-2">
+            <SpeakerWaveIcon className="w-4 h-4 opacity-70" />
             <input
               aria-label="master-volume"
               type="range"
@@ -171,31 +180,43 @@ export function Header({ context, embedded = false }) {
                 const v = Number(e.target.value);
                 settingsMap.setKey('masterGain', v);
                 setMasterGain?.(v);
+                // live color feedback (simple inline gradient)
+                const pct = ((v / 2) * 100).toFixed(1);
+                e.target.style.background = `linear-gradient(to right,#a3e635 ${pct}%,rgba(255,255,255,0.15) ${pct}%)`;
               }}
+              className="h-2 w-28 md:w-32 appearance-none rounded-full accent-lime-400 bg-white/20 cursor-pointer"
             />
           </div>
-          <button
-            onClick={handleEvaluate}
-            title="update"
-            className={cx(
-              'flex items-center space-x-1',
-              !isEmbedded ? 'p-2' : 'px-2',
-              !isDirty || !activeCode ? 'opacity-50' : 'hover:opacity-50',
-            )}
-          >
-            {!isEmbedded && <span>update</span>}
-          </button>
+          {/* Update */}
+            <button
+              onClick={handleEvaluate}
+              title="update / evaluate"
+              disabled={!isDirty || !activeCode}
+              className={cx(
+                'p-1.5 rounded-xl transition relative',
+                'hover:bg-white/15 active:scale-95',
+                (!isDirty || !activeCode) && 'opacity-40 hover:bg-transparent cursor-default'
+              )}
+            >
+              <ArrowPathIcon className="w-5 h-5" />
+              <span className="sr-only">update</span>
+            </button>
+          {/* Learn link */}
           {!isEmbedded && (
             <a
               title="learn"
               href={`${baseNoTrailing}/workshop/getting-started`}
-              className={cx('hover:opacity-70 flex items-center space-x-1 text-sm', !isEmbedded ? 'p-2' : 'px-2')}
+              className={cx(
+                'p-1.5 rounded-xl transition',
+                'hover:bg-white/15 active:scale-95 flex items-center'
+              )}
             >
-              <span>learn</span>
+              <BookOpenIcon className="w-5 h-5" />
+              <span className="sr-only">learn</span>
             </a>
           )}
         </div>
       )}
-  </header>
+    </header>
   );
 }
