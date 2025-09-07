@@ -1,0 +1,175 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      '@strudel/codemirror':
+        specifier: workspace:*
+        version: link:../packages/codemirror
+      '@strudel/core':
+        specifier: workspace:*
+        version: link:../packages/core
+      '@strudel/csound':
+        specifier: workspace:*
+        version: link:../packages/csound
+      '@strudel/desktopbridge':
+        specifier: workspace:*
+        version: link:../packages/desktopbridge
+      '@strudel/draw':
+        specifier: workspace:*
+        version: link:../packages/draw
+      '@strudel/gamepad':
+        specifier: workspace:*
+        version: link:../packages/gamepad
+      '@strudel/hydra':
+        specifier: workspace:*
+        version: link:../packages/hydra
+      '@strudel/midi':
+        specifier: workspace:*
+        version: link:../packages/midi
+      '@strudel/mini':
+        specifier: workspace:*
+        version: link:../packages/mini
+      '@strudel/mondo':
+        specifier: workspace:*
+        version: link:../packages/mondough
+      '@strudel/motion':
+        specifier: workspace:*
+        version: link:../packages/motion
+      '@strudel/mqtt':
+        specifier: workspace:*
+        version: link:../packages/mqtt
+      '@strudel/osc':
+        specifier: workspace:*
+        version: link:../packages/osc
+      '@strudel/serial':
+        specifier: workspace:*
+        version: link:../packages/serial
+      '@strudel/soundfonts':
+        specifier: workspace:*
+        version: link:../packages/soundfonts
+      '@strudel/tidal':
+        specifier: workspace:*
+        version: link:../packages/tidal
+      '@strudel/tonal':
+        specifier: workspace:*
+        version: link:../packages/tonal
+      '@strudel/transpiler':
+        specifier: workspace:*
+        version: link:../packages/transpiler
+      '@strudel/webaudio':
+        specifier: workspace:*
+        version: link:../packages/webaudio
+      '@strudel/xen':
+        specifier: workspace:*
+        version: link:../packages/xen
+      hs2js:
+        specifier: 0.1.0
+        version: 0.1.0
+      react:
+        specifier: ^19.0.0
+        version: 19.1.1
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.1.1(react@19.1.1)
+      react-draggable:
+        specifier: ^4.5.0
+        version: 4.5.0(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+    devDependencies:
+      vite-plugin-bundle-audioworklet:
+        specifier: workspace:*
+        version: link:../packages/vite-plugin-bundle-audioworklet
+
+packages:
+
+  clsx@2.1.1:
+    resolution: {integrity: sha512-eYm0QWBtUrBWZWG0d386OGAw16Z995PiOVo2B7bjWSbHedGl5e0ZWaq65kOGgUSNesEIDkB9ISbTg/JK9dhCZA==}
+    engines: {node: '>=6'}
+
+  hs2js@0.1.0:
+    resolution: {integrity: sha512-THlUIMX8tZf6gtbz5RUZ8xQUyKJEItsx7bxEBcouFIEWjeo90376WMocj3JEz6qTv5nM+tjo3vNvLf89XruMvg==}
+
+  js-tokens@4.0.0:
+    resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
+
+  loose-envify@1.4.0:
+    resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
+    hasBin: true
+
+  object-assign@4.1.1:
+    resolution: {integrity: sha512-rJgTQnkUnH1sFw8yT6VSU3zD3sWmu6sZhIseY8VX+GRu3P6F7Fu+JNDoXfklElbLJSnc3FUQHVe4cU5hj+BcUg==}
+    engines: {node: '>=0.10.0'}
+
+  prop-types@15.8.1:
+    resolution: {integrity: sha512-oj87CgZICdulUohogVAR7AjlC0327U4el4L6eAvOqCeudMDVU0NThNaV+b9Df4dXgSP1gXMTnPdhfe/2qDH5cg==}
+
+  react-dom@19.1.1:
+    resolution: {integrity: sha512-Dlq/5LAZgF0Gaz6yiqZCf6VCcZs1ghAJyrsu84Q/GT0gV+mCxbfmKNoGRKBYMJ8IEdGPqu49YWXD02GCknEDkw==}
+    peerDependencies:
+      react: ^19.1.1
+
+  react-draggable@4.5.0:
+    resolution: {integrity: sha512-VC+HBLEZ0XJxnOxVAZsdRi8rD04Iz3SiiKOoYzamjylUcju/hP9np/aZdLHf/7WOD268WMoNJMvYfB5yAK45cw==}
+    peerDependencies:
+      react: '>= 16.3.0'
+      react-dom: '>= 16.3.0'
+
+  react-is@16.13.1:
+    resolution: {integrity: sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==}
+
+  react@19.1.1:
+    resolution: {integrity: sha512-w8nqGImo45dmMIfljjMwOGtbmC/mk4CMYhWIicdSflH91J9TyCyczcPFXJzrZ/ZXcgGRFeP6BU0BEJTw6tZdfQ==}
+    engines: {node: '>=0.10.0'}
+
+  scheduler@0.26.0:
+    resolution: {integrity: sha512-NlHwttCI/l5gCPR3D1nNXtWABUmBwvZpEQiD4IXSbIDq8BzLIK/7Ir5gTFSGZDUu37K5cMNp0hFtzO38sC7gWA==}
+
+  web-tree-sitter@0.20.8:
+    resolution: {integrity: sha512-weOVgZ3aAARgdnb220GqYuh7+rZU0Ka9k9yfKtGAzEYMa6GgiCzW9JjQRJyCJakvibQW+dfjJdihjInKuuCAUQ==}
+
+snapshots:
+
+  clsx@2.1.1: {}
+
+  hs2js@0.1.0:
+    dependencies:
+      web-tree-sitter: 0.20.8
+
+  js-tokens@4.0.0: {}
+
+  loose-envify@1.4.0:
+    dependencies:
+      js-tokens: 4.0.0
+
+  object-assign@4.1.1: {}
+
+  prop-types@15.8.1:
+    dependencies:
+      loose-envify: 1.4.0
+      object-assign: 4.1.1
+      react-is: 16.13.1
+
+  react-dom@19.1.1(react@19.1.1):
+    dependencies:
+      react: 19.1.1
+      scheduler: 0.26.0
+
+  react-draggable@4.5.0(react-dom@19.1.1(react@19.1.1))(react@19.1.1):
+    dependencies:
+      clsx: 2.1.1
+      prop-types: 15.8.1
+      react: 19.1.1
+      react-dom: 19.1.1(react@19.1.1)
+
+  react-is@16.13.1: {}
+
+  react@19.1.1: {}
+
+  scheduler@0.26.0: {}
+
+  web-tree-sitter@0.20.8: {}
