@@ -73,6 +73,9 @@ export default function ReplEditor(Props) {
     };
   }, [editorRef, containerRef]);
 
+  // Generar un ID único para el panel de snippets si no hay sessionId
+  const snippetSessionId = sessionId || `fallback-${context.editorRef?.current?.id || Date.now()}`;
+
   return (
     <div 
       className="h-full flex flex-col relative" 
@@ -81,7 +84,8 @@ export default function ReplEditor(Props) {
     >
       <Loader active={pending} />
       <Header context={context} />
-      {sessionId && <SnippetFloatingPanel context={context} sessionId={sessionId} />}
+      {/* Mostrar siempre el panel de snippets */}
+      <SnippetFloatingPanel context={context} sessionId={snippetSessionId} />
       <div className="grow flex relative overflow-hidden">
         <Code containerRef={containerRef} editorRef={editorRef} init={init} />
         {!isZen && panelPosition === 'right' && <VerticalPanel context={context} />}

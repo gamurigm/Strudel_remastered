@@ -29,5 +29,9 @@ export function Repl({ embedded = false }) {
   }
 
   // Default: multi-repl channel manager
-  return <div style={{ fontFamily, height: '100%' }}><MultiReplManager /></div>;
+  return (
+    <div style={{ fontFamily, height: '100%', position: 'relative' }}>
+      <MultiReplManager />
+    </div>
+  );
 }

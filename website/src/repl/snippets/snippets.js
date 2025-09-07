@@ -22,33 +22,84 @@ export function insertSnippet(editorRef, code) {
   const ed = editorRef?.current;
   if (!ed) return;
   try {
+    // Asegurarnos de que el editor tiene foco
+    if (ed.view) {
+      try { ed.view.focus(); } catch {}
+    }
+    
     // Try primary getter
     let current = typeof ed.getCode === 'function' ? ed.getCode() : '';
     // Fallback to CodeMirror view
     if ((!current || current === '// LOADING') && ed.view?.state?.doc) {
       current = ed.view.state.doc.toString();
     }
+    
+    // Si el editor está vacío, insertamos directamente
     const snippetBlock = code;
     const next = !current || current === '// LOADING'
       ? snippetBlock
       : current.endsWith('\n')
         ? current + '\n' + snippetBlock
         : current + '\n\n' + snippetBlock;
+    
+    // Intentar múltiples métodos para insertar el código
     if (typeof ed.setCode === 'function') {
       ed.setCode(next);
     } else if (ed.view) {
-      // Append via transaction
-      const docLen = ed.view.state.doc.length;
-      ed.view.dispatch({ changes: { from: docLen, to: docLen, insert: '\n' + snippetBlock } });
+      // Verificar si hay selección y reemplazarla, o insertar al final
+      const selection = ed.view.state.selection;
+      if (selection && selection.main.from !== selection.main.to) {
+        // Reemplazar selección con snippet
+        ed.view.dispatch({
+          changes: { from: selection.main.from, to: selection.main.to, insert: snippetBlock }
+        });
+      } else {
+        // Insertar al final con salto de línea
+        const docLen = ed.view.state.doc.length;
+        const needsNewline = docLen > 0 && !ed.view.state.doc.toString().endsWith('\n');
+        const prefix = needsNewline ? '\n\n' : '';
+        ed.view.dispatch({ 
+          changes: { from: docLen, to: docLen, insert: prefix + snippetBlock } 
+        });
+      }
+      
+      // Desplazar al final para ver el snippet insertado
+      try {
+        const scrollDOM = ed.view.scrollDOM;
+        if (scrollDOM) {
+          setTimeout(() => {
+            scrollDOM.scrollTop = scrollDOM.scrollHeight;
+          }, 10);
+        }
+      } catch {}
     }
+    
     // If currently playing, re-evaluate automatically so user hears change
     try {
       if (ed.repl?.playing) {
         ed.evaluate?.();
       }
     } catch {}
+    
+    // Mostrar notificación visual de éxito
+    try {
+      const scrollerEl = ed.view?.scrollDOM;
+      if (scrollerEl) {
+        const notification = document.createElement('div');
+        notification.textContent = '✓ Snippet insertado';
+        notification.style.cssText = 'position:absolute; bottom:20px; right:20px; background:rgba(132,204,22,0.8); color:white; padding:6px 12px; border-radius:8px; font-size:12px; pointer-events:none; opacity:0; transition:opacity 0.3s;';
+        scrollerEl.appendChild(notification);
+        setTimeout(() => {
+          notification.style.opacity = '1';
+          setTimeout(() => {
+            notification.style.opacity = '0';
+            setTimeout(() => notification.remove(), 300);
+          }, 1500);
+        }, 10);
+      }
+    } catch {}
   } catch (e) {
-    // swallow
+    console.warn('Error al insertar snippet:', e);
   }
 }
 
