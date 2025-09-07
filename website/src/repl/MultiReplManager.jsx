@@ -8,9 +8,20 @@ import PauseIcon from '@heroicons/react/20/solid/PauseIcon';
 import { StrudelMPClient } from './multiplayer/client.mjs';
 
 const LS_KEY = 'strudelMultiReplsV1';
+const CHANNEL_COLORS = [
+  '#a3e635', // lime
+  '#38bdf8', // sky
+  '#f472b6', // pink
+  '#fb923c', // orange
+  '#c084fc', // violet
+  '#4ade80', // green
+  '#facc15', // amber
+  '#94a3b8', // slate
+];
 
 function createSession(channel, code = '') {
-  return { id: crypto.randomUUID(), name: `Canal ${channel}`, code, channel };
+  const color = CHANNEL_COLORS[(channel - 1) % CHANNEL_COLORS.length];
+  return { id: crypto.randomUUID(), name: `Canal ${channel}`, code, channel, color };
 }
 
 function Session({ session, active, registerContext, initialCode }) {
@@ -51,7 +62,7 @@ function Session({ session, active, registerContext, initialCode }) {
 }
 
 export default function MultiReplManager() {
-  const [sessions, setSessions] = useState([]); // {id,name,code}
+  const [sessions, setSessions] = useState([]); // {id,name,code,color}
   const [activeId, setActiveId] = useState(null);
   const contextsRef = useRef(new Map());
   const mpRef = useRef();
@@ -186,18 +197,28 @@ export default function MultiReplManager() {
 
   return (
     <div className="w-full h-full flex flex-col">
-      <div className="flex items-center gap-1 px-2 py-1 text-xs font-mono bg-neutral-900/70 border-b border-neutral-700">
+      <div className="flex items-center gap-3 px-3 py-2 text-[11px] font-mono bg-neutral-900/60 supports-[backdrop-filter]:backdrop-blur-md border-b border-neutral-800/60 shadow-sm">
+        <div className="flex items-center gap-1 overflow-x-auto flex-1 pr-2">
         {sessions.map((s) => {
           const active = s.id === activeId;
           const started = contextsRef.current.get(s.id)?.started;
           return (
-            <div key={s.id} className="relative group flex items-center">
+            <div
+              key={s.id}
+              className={[
+                'relative group flex items-center rounded-md ring-1 ring-inset transition-all border border-neutral-700/30',
+                active ? 'ring-lime-400/40 bg-neutral-800/70 shadow-inner' : 'ring-neutral-700/40 bg-neutral-800/30 hover:bg-neutral-700/40'
+              ].join(' ')}
+            >
+              <div className="w-1 h-7 rounded-l-md" style={{ background: s.color || '#666' }} />
               <button
                 onClick={() => toggleSession(s.id)}
                 disabled={!contextsRef.current.get(s.id)}
                 className={[
-                  'p-1 rounded-l-md border-r flex items-center justify-center',
-                  started ? 'bg-lime-600/70 text-white' : 'bg-neutral-800/40 text-neutral-300 hover:bg-neutral-600',
+                  'p-1 px-1.5 flex items-center justify-center transition-colors',
+                  started
+                    ? 'text-lime-300 hover:text-lime-200'
+                    : 'text-neutral-400 hover:text-neutral-200',
                   !contextsRef.current.get(s.id) ? 'opacity-40 cursor-not-allowed' : ''
                 ].join(' ')}
                 title={started ? 'Detener canal' : 'Reproducir canal'}
@@ -211,19 +232,21 @@ export default function MultiReplManager() {
                   if (newName) renameSession(s.id, newName);
                 }}
                 className={[
-                  'px-2 py-1 rounded-r-md transition-colors flex items-center gap-2',
-                  active ? 'bg-neutral-700 text-white' : 'bg-neutral-800/40 text-neutral-300 hover:bg-neutral-700'
+                  'px-2 py-1 pr-3 rounded-r-md transition-colors flex items-center gap-2 select-none',
+                  active
+                    ? 'text-neutral-50'
+                    : 'text-neutral-300 hover:text-white'
                 ].join(' ')}
               >
-                <span>{s.name}</span>
+                <span className="tracking-tight font-medium line-clamp-1 max-w-[90px] text-left">{s.name}</span>
                 {started && (
-                  <span className="w-2 h-2 rounded-full bg-lime-400 animate-pulse" />
+                  <span className="w-2 h-2 rounded-full bg-lime-400 shadow-[0_0_6px_2px_rgba(163,230,53,0.6)] animate-pulse" />
                 )}
               </button>
               {sessions.length > 1 && (
                 <button
                   onClick={() => removeSession(s.id)}
-                  className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-black/80 text-neutral-400 hover:text-white flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-neutral-900/90 backdrop-blur text-neutral-400 hover:text-white flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity shadow"
                   title="Cerrar canal"
                 >
                   <XMarkIcon className="w-3 h-3" />
@@ -232,9 +255,10 @@ export default function MultiReplManager() {
             </div>
           );
         })}
+        </div>
         <button
           onClick={addSession}
-          className="ml-1 p-1 rounded-md bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
+          className="ml-1 p-2 rounded-md bg-neutral-800/50 text-neutral-300 hover:text-white hover:bg-neutral-700/70 transition-colors ring-1 ring-neutral-700/40"
           title="Nuevo canal"
         >
           <PlusIcon className="w-4 h-4" />
@@ -244,10 +268,10 @@ export default function MultiReplManager() {
             onClick={playAll}
             disabled={contextsRef.current.size === 0}
             className={[
-              'px-2 py-1 rounded-md flex items-center gap-1',
+              'px-2 py-1 rounded-md flex items-center gap-1 font-semibold tracking-tight',
               contextsRef.current.size === 0
-                ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed'
-                : 'bg-neutral-700 text-white hover:bg-lime-600'
+                ? 'bg-neutral-800/40 text-neutral-600 cursor-not-allowed'
+                : 'bg-gradient-to-br from-lime-600/80 to-lime-500/70 text-white hover:from-lime-500 hover:to-lime-400 shadow hover:shadow-md'
             ].join(' ')}
             title="Reproducir todos"
           >
@@ -257,16 +281,16 @@ export default function MultiReplManager() {
             onClick={stopAll}
             disabled={contextsRef.current.size === 0}
             className={[
-              'px-2 py-1 rounded-md flex items-center gap-1',
+              'px-2 py-1 rounded-md flex items-center gap-1 font-semibold tracking-tight',
               contextsRef.current.size === 0
-                ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed'
-                : 'bg-neutral-800 text-neutral-300 hover:bg-red-600/80 hover:text-white'
+                ? 'bg-neutral-800/40 text-neutral-600 cursor-not-allowed'
+                : 'bg-gradient-to-br from-red-700/80 to-red-600/70 text-neutral-100 hover:from-red-600 hover:to-red-500 hover:text-white shadow hover:shadow-md'
             ].join(' ')}
             title="Detener todos"
           >
             <PauseIcon className="w-3 h-3" /> Todos
           </button>
-          <span className="opacity-60">Canales simultáneos</span>
+          <span className="opacity-60 hidden md:inline">Canales simultáneos</span>
         </div>
       </div>
       <div className="relative flex-1 overflow-hidden">
