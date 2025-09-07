@@ -157,6 +157,20 @@ export function useReplContext() {
       editor.setCode(code);
       setDocumentTitle(code);
       logger(`Welcome to Strudel! ${msg} Press play or hit ctrl+enter to run it!`, 'highlight');
+      // Fallback: if after a short delay the editor is still empty, force defaultTune
+      setTimeout(() => {
+        try {
+          if (editorRef.current) {
+            const current = editorRef.current.getCode ? editorRef.current.getCode() : editorRef.current.view?.state?.doc?.toString();
+            if (!current || !current.trim()) {
+              editorRef.current.setCode(defaultTune);
+              logger('Loaded fallback defaultTune (previous content was empty)', 'highlight');
+            }
+          }
+        } catch (e) {
+          console.warn('Fallback defaultTune load failed', e);
+        }
+      }, 500);
     });
 
     editorRef.current = editor;
