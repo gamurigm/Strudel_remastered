@@ -6,8 +6,8 @@ import XMarkIcon from '@heroicons/react/20/solid/XMarkIcon';
 
 const LS_KEY = 'strudelMultiReplsV1';
 
-function createSession(index, code = '') {
-  return { id: crypto.randomUUID(), name: `Tab ${index}`, code };
+function createSession(channel, code = '') {
+  return { id: crypto.randomUUID(), name: `Canal ${channel}`, code, channel };
 }
 
 function Session({ session, active, registerContext, initialCode }) {
@@ -123,7 +123,7 @@ export default function MultiReplManager() {
               <button
                 onClick={() => setActiveId(s.id)}
                 onDoubleClick={() => {
-                  const newName = prompt('Nombre pestaña', s.name);
+                  const newName = prompt('Nombre canal', s.name);
                   if (newName) renameSession(s.id, newName);
                 }}
                 className={[
@@ -150,12 +150,12 @@ export default function MultiReplManager() {
         <button
           onClick={addSession}
           className="ml-1 p-1 rounded-md bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
-          title="Nueva pestaña"
+          title="Nuevo canal"
         >
           <PlusIcon className="w-4 h-4" />
         </button>
         <div className="ml-auto text-[10px] text-neutral-500 flex gap-3 pr-2">
-          <span>Múltiples REPL simultáneos</span>
+          <span>Múltiples canales</span>
         </div>
       </div>
       <div className="relative flex-1 overflow-hidden">

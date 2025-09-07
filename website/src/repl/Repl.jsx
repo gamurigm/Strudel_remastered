@@ -7,14 +7,27 @@ This program is free software: you can redistribute it and/or modify it under th
 import { isIframe, isUdels } from './util.mjs';
 import UdelsEditor from '@components/Udels/UdelsEditor';
 import ReplEditor from './components/ReplEditor';
+import MultiReplManager from './MultiReplManager.jsx';
 import EmbeddedReplEditor from './components/EmbeddedReplEditor';
 import { useReplContext } from './useReplContext';
 import { useSettings } from '@src/settings.mjs';
 
 export function Repl({ embedded = false }) {
   const isEmbedded = embedded || isIframe();
-  const Editor = isUdels() ? UdelsEditor : isEmbedded ? EmbeddedReplEditor : ReplEditor;
-  const context = useReplContext();
   const { fontFamily } = useSettings();
-  return <Editor context={context} style={{ fontFamily }} />;
+
+  // If Udels variant
+  if (isUdels()) {
+    const context = useReplContext();
+    return <UdelsEditor context={context} style={{ fontFamily }} />;
+  }
+
+  // If embedded (single editor)
+  if (isEmbedded) {
+    const context = useReplContext();
+    return <EmbeddedReplEditor context={context} style={{ fontFamily }} />;
+  }
+
+  // Default: multi-repl channel manager
+  return <div style={{ fontFamily, height: '100%' }}><MultiReplManager /></div>;
 }
