@@ -75,7 +75,8 @@ async function getModule(name) {
 
 const initialCode = `// LOADING`;
 
-export function useReplContext() {
+export function useReplContext(options = {}) {
+  const { solo = true } = options; // solo=true mantiene comportamiento anterior; en MultiRepl se usará false
   const { isSyncEnabled, audioEngineTarget } = useSettings();
   const shouldUseWebaudio = audioEngineTarget !== audioEngineTargets.osc;
   const defaultOutput = shouldUseWebaudio ? webaudioOutput : superdirtOutput;
@@ -98,6 +99,7 @@ export function useReplContext() {
       drawTime,
       drawContext,
       prebake: async () => Promise.all([modulesLoading, presets]),
+      solo,
       onUpdateState: (state) => {
         setReplState({ ...state });
       },
@@ -274,6 +276,7 @@ export function useReplContext() {
     pending,
     isDirty,
     activeCode,
+  solo,
     handleTogglePlay,
     handleUpdate,
     handleShuffle,
