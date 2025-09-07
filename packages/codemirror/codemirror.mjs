@@ -1,7 +1,7 @@
 import { closeBrackets } from '@codemirror/autocomplete';
 export { toggleComment, toggleBlockComment, toggleLineComment, toggleBlockCommentByLine } from '@codemirror/commands';
 // import { search, highlightSelectionMatches } from '@codemirror/search';
-import { history, indentWithTab } from '@codemirror/commands';
+import { history, indentWithTab, defaultKeymap, insertNewlineAndIndent } from '@codemirror/commands';
 import { javascript } from '@codemirror/lang-javascript';
 import { defaultHighlightStyle, syntaxHighlighting, bracketMatching } from '@codemirror/language';
 import { Compartment, EditorState, Prec } from '@codemirror/state';
@@ -88,6 +88,8 @@ export function initEditor({ initialCode = '', onChange, onEvaluate, onStop, roo
       mondo ? [] : javascript(),
       sliderPlugin,
       widgetPlugin,
+      // Asegurarse de que los keymaps por defecto estén activos - incluye Enter para nueva línea
+      keymap.of(defaultKeymap),
       // indentOnInput(), // works without. already brought with javascript extension?
       // bracketMatching(), // does not do anything
       syntaxHighlighting(defaultHighlightStyle),
@@ -112,6 +114,11 @@ export function initEditor({ initialCode = '', onChange, onEvaluate, onStop, roo
             key: 'Alt-.',
             preventDefault: true,
             run: () => onStop?.(),
+          },
+          // Agregar explícitamente el manejador de Enter para crear nuevas líneas
+          {
+            key: 'Enter',
+            run: insertNewlineAndIndent
           },
           /* {
           key: 'Ctrl-Shift-.',

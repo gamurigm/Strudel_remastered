@@ -141,7 +141,61 @@ export function useReplContext(options = {}) {
     });
     window.strudelMirror = editor;
 
-    // init settings
+    // Configuración básica del editor y manejo de teclas
+    try {
+      // Asegurarse que el editor pueda recibir foco
+      if (editor.view?.dom) {
+        editor.view.dom.setAttribute('tabindex', '0');
+      }
+      
+      // Forzar que el editor tenga foco
+      setTimeout(() => { 
+        try { 
+          editor.view?.focus(); 
+          
+          // Intentar forzar el comportamiento de Enter directamente en CodeMirror
+          if (editor.view) {
+            // Eliminar todos los posibles listeners existentes de keydown
+            const oldEl = editor.view.dom;
+            const newEl = oldEl.cloneNode(true);
+            if (oldEl.parentNode) {
+              oldEl.parentNode.replaceChild(newEl, oldEl);
+              editor.view.dom = newEl;
+            }
+            
+            // Auto-foco cada 2 segundos para mantener el editor enfocado
+            setInterval(() => {
+              try { editor.view?.focus(); } catch {}
+            }, 2000);
+          }
+        } catch (err) {
+          console.warn('Error en foco inicial:', err);
+        }
+      }, 500);
+      
+      // Click en cualquier parte del contenedor enfoca el editor
+      containerRef.current?.addEventListener('mousedown', (e) => {
+        // Prevenir comportamiento por defecto para asegurarnos de que el editor recibe foco
+        e.preventDefault();
+        try { 
+          editor.view?.focus(); 
+        } catch {}
+      });
+    } catch (err) {
+      console.warn('Error configurando editor:', err);
+    }
+
+    // Inject minimal style to guarantee editor area is clickable & full height
+    try {
+      if (!document.getElementById('cm-full-height-style')) {
+        const st = document.createElement('style');
+        st.id = 'cm-full-height-style';
+        st.textContent = `.cm-editor{height:100%;} #code{height:100%; position:relative;} .cm-editor .cm-scroller{overscroll-behavior:none;}`;
+        document.head.appendChild(st);
+      }
+    } catch (err) {
+      console.warn('Error injecting styles:', err);
+    }    // init settings
     initCode().then(async (decoded) => {
       let code, msg;
       if (decoded) {
