@@ -24,7 +24,8 @@ const sidebar = SIDEBAR[langCode];
             <h2>{header}</h2>
             <ul>
               {children.map((child) => {
-                const url = `${baseNoTrailing}/${child.link}${child.link.endsWith('/') ? '' : '/'}`;
+                // Respect Astro trailingSlash: 'never' (do not force trailing slash)
+                const url = `${baseNoTrailing}/${child.link.replace(/\/$/, '')}`;
                 return (
                   <li class="">
                     <a

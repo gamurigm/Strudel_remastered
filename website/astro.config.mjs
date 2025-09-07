@@ -24,16 +24,7 @@ export default defineConfig({
       rehypePlugins: [
         rehypeSlug,
         [rehypeAutolinkHeadings, { behavior: 'wrap' }],
-        [
-          rehypeUrls,
-          (url) => {
-            if (url.href.startsWith('/')) {
-              // TODO use base
-              return '/strudel' + url.href;
-            }
-            return url.href;
-          },
-        ],
+  [rehypeUrls, (url) => url.href],
       ],
     }),
     tailwind(),

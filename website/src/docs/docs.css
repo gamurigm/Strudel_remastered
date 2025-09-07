@@ -40,3 +40,43 @@
   font-size: 0.9em;
   opacity: 50%;
 }
+
+/* ================= Modern Scrollbars (applies site-wide) ================= */
+/* Base */
+* {
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: rgba(255,255,255,0.25) transparent;
+}
+
+/* Webkit */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+  border-radius: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(255,255,255,0.35), rgba(255,255,255,0.15));
+  border: 2px solid rgba(0,0,0,0.35);
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.08) inset;
+  transition: background 0.3s ease;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(163,230,53,0.7), rgba(34,197,94,0.55));
+}
+*::-webkit-scrollbar-corner { background: transparent; }
+
+/* Narrow variant for elements explicitly marked */
+.thin-scroll::-webkit-scrollbar { width: 6px; }
+.thin-scroll::-webkit-scrollbar-thumb { border-width: 1px; }
+
+/* Code / editor emphasize active area */
+#code .cm-scroller::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(255,255,255,0.4), rgba(255,255,255,0.18));
+}
+#code .cm-scroller::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(163,230,53,0.6), rgba(34,197,94,0.4));
+}

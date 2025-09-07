@@ -37,8 +37,19 @@ const githubEditUrl = `${CONFIG.GITHUB_EDIT_URL}/${currentFile}`;
       </header>
       <main class="relative pt-16">
         <div class="h-full top-0 overflow-auto min-w-[300px] flex xl:justify-center pr-4 pl-4 md:pl-[300px] xl:pl-0">
-          <aside title="Site Navigation" class="w-[300px] px-6 left-0 hidden md:block fixed h-full">
-            <LeftSidebar currentPage={currentPage} />
+          <aside title="Site Navigation" id="leftSidebar" class="w-[300px] px-4 pt-4 left-0 hidden md:block fixed h-full
+              transition-transform duration-300 ease-out
+              bg-black/50 backdrop-blur-sm border-r border-white/10
+              shadow-lg">
+            <div class="flex items-center justify-between mb-4 pr-2">
+              <h2 class="text-sm tracking-wider uppercase text-white/60 font-semibold">Navigation</h2>
+              <button id="toggleSidebar" class="text-white/60 hover:text-white text-xs px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 transition">
+                <span class="inline md:hidden">≡</span><span class="hidden md:inline">⟨⟩</span>
+              </button>
+            </div>
+            <div class="pr-2 custom-scroll thin-scroll overflow-y-auto h-[calc(100%-3.5rem)]">
+              <LeftSidebar currentPage={currentPage} />
+            </div>
           </aside>
           <PageContent frontmatter={frontmatter} headings={headings} githubEditUrl={githubEditUrl}>
             <slot />
@@ -51,3 +62,27 @@ const githubEditUrl = `${CONFIG.GITHUB_EDIT_URL}/${currentFile}`;
     </div>
   </body>
 </html>
+
+<script is:inline>
+  // Simple collapse for left sidebar (desktop only for now)
+  const ls = document.getElementById('leftSidebar');
+  const btn = document.getElementById('toggleSidebar');
+  if (ls && btn) {
+    let collapsed = false;
+    btn.addEventListener('click', () => {
+      collapsed = !collapsed;
+      if (collapsed) {
+        ls.style.transform = 'translateX(-260px)';
+        btn.textContent = '▶';
+      } else {
+        ls.style.transform = 'translateX(0)';
+        btn.textContent = '⟨⟩';
+      }
+    });
+  }
+</script>
+
+<style is:inline>
+  /* Only width override; rest handled globally */
+  #leftSidebar::-webkit-scrollbar { width: 8px; }
+</style>
