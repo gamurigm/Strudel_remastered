@@ -1,3 +1,44 @@
+
+
+
+
+
+
+
+
+
+
+/*
+setCps(108/60/4)
+
+await samples({'gtr': 'gtr/0001_cleanC.wav'}, 'github:tidalcycles/Dirt-Samples/master/');
+
+const guitar    = x => x.note().s("gtr").room(.7).gain(0.5).clip(1).release(0.5).delay(0.55)
+const accordi   = x => x.note().s("gm_tremolo_strings:3").gain(0.2).clip(1).release(0.5)
+const harm   = x => x.note().s("piano").gain(1.7).clip(1).release(0.5)
+const basso     = x => x.note().s("subs").gain(1.2).clip(1).sustain(0.95).delay(0.25)
+const ritmo     = x => x.bank("AlesisHR16").clip(1).gain(0.75)
+
+const scala = cat('c dorian')  // IV VI I III
+stack(
+"<[5,13,7] [5,9,11] [0,9,13] [6,13,14]>".scale(scala).apply(accordi).delay(1.7),
+"~@2 2 <[7,5,3 9 6 6][7 5 3 6,4 <[2,6,4 0]>]>@2 2 <8,11 6,13 4,9 14>@2".scale(scala).transpose(-5).apply(guitar),
+"[~ ~ ~ ~][2 7,8 5,7][~@4 ][7,9,11 ~ 6,4]".scale(scala).apply(harm).delay(0.33),
+"<-5 -2 0 -1>".struct("[[x ~]!2 x x@0.5 [x ~]!2 x@0.5 [x ~]!2]").scale(scala).apply(basso),
+s("bd!4,[~ sd]!2,[~ hh!2 hh*2]!2").apply(ritmo).room(0.1).delay(.15),
+s("hh!7 <~@3 hh*5 ~@3 hh*3  hh!2>").patt("0.1 0.5 1.5 1 1 0.6 0.9 1").apply(ritmo).gain(2)  
+)._pianoroll({minMidi:10, labels:1, strikeActive:1})
+
+
+//---------------------------------------------------------------
+*/
+
+
+
+
+
+
+
 // "Il Vento Caldo Dell'Estate (wip)"
 // song @by Alice
 // script @by eefano
@@ -53,3 +94,6 @@ drums: `<a@27 [a,b]@24 [a,b,c]@5 [a,d]@56 [a,d,e]@2 [a,d]@20 [a,d,f]@2 [a,d]@24 
   hh: s('hh').velocity(0.1).hpf(8000),
   cr: s('cr').speed(0.7).velocity(0.1).hpf(6000),
 }).bank("Linn9000").room(0.2).gain(0.8).rsize(4)
+
+
+
