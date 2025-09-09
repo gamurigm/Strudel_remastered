@@ -21,85 +21,55 @@ export const DEFAULT_SNIPPETS = [
 export function insertSnippet(editorRef, code) {
   const ed = editorRef?.current;
   if (!ed) return;
+  const snippetBlock = (code || '').replace(/\s+$/,'');
+
+  // Si estamos en modo multi (MultiReplManager expone función global), usarla y salir.
+  if (typeof window !== 'undefined' && typeof window.__strudelAppendActive === 'function') {
+    const ok = window.__strudelAppendActive(snippetBlock, editorRef);
+    if (ok) return;
+    // si no logró localizar el editor correcto, seguimos con inserción local
+  }
+
+  // Modo CodeMirror directo: APPEND únicamente (no reescribir todo) para no perder contenido previo.
+  const view = ed.view;
+  const doc = view?.state?.doc;
+  if (view && doc) {
+    const before = doc.toString();
+    const empty = !before.trim() || before.trim() === '// LOADING';
+    let insertText;
+    if (empty) insertText = snippetBlock;
+    else if (before.endsWith('\n\n')) insertText = snippetBlock;
+    else if (before.endsWith('\n')) insertText = '\n' + snippetBlock;
+    else insertText = '\n\n' + snippetBlock;
+
+    const fromPos = doc.length;
+    view.dispatch({
+      changes: { from: fromPos, to: fromPos, insert: insertText },
+      selection: { anchor: fromPos + insertText.length }
+    });
+
+    // Actualizar cache interna (si existe) tras el tick de actualización del doc
+    setTimeout(() => {
+      try { if ('code' in ed) ed.code = view.state.doc.toString(); } catch {}
+    }, 0);
+
+    const sc = view.scrollDOM;
+    if (sc) setTimeout(() => { sc.scrollTop = sc.scrollHeight; }, 25);
+    return;
+  }
+
+  // Fallback: editor sin view -> usar get/setCode
   try {
-    // Asegurarnos de que el editor tiene foco
-    if (ed.view) {
-      try { ed.view.focus(); } catch {}
-    }
-    
-    // Try primary getter
-    let current = typeof ed.getCode === 'function' ? ed.getCode() : '';
-    // Fallback to CodeMirror view
-    if ((!current || current === '// LOADING') && ed.view?.state?.doc) {
-      current = ed.view.state.doc.toString();
-    }
-    
-    // Si el editor está vacío, insertamos directamente
-    const snippetBlock = code;
-    const next = !current || current === '// LOADING'
-      ? snippetBlock
-      : current.endsWith('\n')
-        ? current + '\n' + snippetBlock
-        : current + '\n\n' + snippetBlock;
-    
-    // Intentar múltiples métodos para insertar el código
-    if (typeof ed.setCode === 'function') {
-      ed.setCode(next);
-    } else if (ed.view) {
-      // Verificar si hay selección y reemplazarla, o insertar al final
-      const selection = ed.view.state.selection;
-      if (selection && selection.main.from !== selection.main.to) {
-        // Reemplazar selección con snippet
-        ed.view.dispatch({
-          changes: { from: selection.main.from, to: selection.main.to, insert: snippetBlock }
-        });
-      } else {
-        // Insertar al final con salto de línea
-        const docLen = ed.view.state.doc.length;
-        const needsNewline = docLen > 0 && !ed.view.state.doc.toString().endsWith('\n');
-        const prefix = needsNewline ? '\n\n' : '';
-        ed.view.dispatch({ 
-          changes: { from: docLen, to: docLen, insert: prefix + snippetBlock } 
-        });
-      }
-      
-      // Desplazar al final para ver el snippet insertado
-      try {
-        const scrollDOM = ed.view.scrollDOM;
-        if (scrollDOM) {
-          setTimeout(() => {
-            scrollDOM.scrollTop = scrollDOM.scrollHeight;
-          }, 10);
-        }
-      } catch {}
-    }
-    
-    // If currently playing, re-evaluate automatically so user hears change
-    try {
-      if (ed.repl?.playing) {
-        ed.evaluate?.();
-      }
-    } catch {}
-    
-    // Mostrar notificación visual de éxito
-    try {
-      const scrollerEl = ed.view?.scrollDOM;
-      if (scrollerEl) {
-        const notification = document.createElement('div');
-        notification.textContent = '✓ Snippet insertado';
-        notification.style.cssText = 'position:absolute; bottom:20px; right:20px; background:rgba(132,204,22,0.8); color:white; padding:6px 12px; border-radius:8px; font-size:12px; pointer-events:none; opacity:0; transition:opacity 0.3s;';
-        scrollerEl.appendChild(notification);
-        setTimeout(() => {
-          notification.style.opacity = '1';
-          setTimeout(() => {
-            notification.style.opacity = '0';
-            setTimeout(() => notification.remove(), 300);
-          }, 1500);
-        }, 10);
-      }
-    } catch {}
+    const base = ed.getCode?.() || '';
+    const empty = !base.trim() || base.trim() === '// LOADING';
+    let next;
+    if (empty) next = snippetBlock;
+    else if (base.endsWith('\n\n')) next = base + snippetBlock;
+    else if (base.endsWith('\n')) next = base + '\n' + snippetBlock;
+    else next = base + '\n\n' + snippetBlock;
+    ed.setCode?.(next);
   } catch (e) {
-    console.warn('Error al insertar snippet:', e);
+    console.warn('insertSnippet fallback error:', e);
   }
 }
 

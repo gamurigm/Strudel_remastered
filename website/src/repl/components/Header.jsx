@@ -23,29 +23,20 @@ export function Header({ context, embedded = false }) {
   const dragRef = useRef(null);
   const dragState = useRef(null);
 
-  // Load saved position & center if first time
+  // Always center horizontally at top on mount & on resize (no persistence)
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    let saved;
-    try { saved = localStorage.getItem('replPanelPos'); } catch {}
-    if (saved) {
-      try { setPosition(JSON.parse(saved)); return; } catch {}
-    }
-    // center horizontally after mount (need width measurement)
-    requestAnimationFrame(() => {
+    const center = () => {
       const el = dragRef.current;
-      if (el) {
-        const w = window.innerWidth;
-        const rect = el.getBoundingClientRect();
-        setPosition({ x: Math.max(8, w / 2 - rect.width / 2), y: 12 });
-      }
-    });
+      if (!el) return;
+      const w = window.innerWidth;
+      const rect = el.getBoundingClientRect();
+      setPosition({ x: Math.max(8, w / 2 - rect.width / 2), y: 12 });
+    };
+    requestAnimationFrame(center);
+    window.addEventListener('resize', center);
+    return () => window.removeEventListener('resize', center);
   }, []);
-
-  // Persist position
-  useEffect(() => {
-    try { localStorage.setItem('replPanelPos', JSON.stringify(position)); } catch {}
-  }, [position]);
 
   // Drag handlers
   useEffect(() => {
@@ -134,7 +125,7 @@ export function Header({ context, embedded = false }) {
         'transition-colors transition-shadow duration-300',
         started && 'ring-2 ring-lime-400/60 shadow-[0_0_0.75rem_-0.1rem_rgba(163,230,53,0.35)]'
       )}
-      style={{ fontFamily, left: 0, top: 0, transform: `translate3d(${position.x}px, ${position.y}px, 0)` }}
+  style={{ fontFamily, left: 0, top: 0, transform: `translate3d(${position.x}px, ${position.y}px, 0)` }}
     >
       <button
         onClick={() => setHidden(true)}

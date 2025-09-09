@@ -3,7 +3,6 @@ import { HorizontalPanel, VerticalPanel } from '@src/repl/components/panel/Panel
 import { Code } from '@src/repl/components/Code';
 import UserFacingErrorMessage from '@src/repl/components/UserFacingErrorMessage';
 import { Header } from './Header';
-import SnippetFloatingPanel from './SnippetFloatingPanel.jsx';
 import { useSettings } from '@src/settings.mjs';
 import { useEffect } from 'react';
 // Importar estilos CSS para arreglar problemas del editor
@@ -73,8 +72,6 @@ export default function ReplEditor(Props) {
     };
   }, [editorRef, containerRef]);
 
-  // Generar un ID único para el panel de snippets si no hay sessionId
-  const snippetSessionId = sessionId || `fallback-${context.editorRef?.current?.id || Date.now()}`;
 
   return (
     <div 
@@ -84,8 +81,7 @@ export default function ReplEditor(Props) {
     >
       <Loader active={pending} />
       <Header context={context} />
-      {/* Mostrar siempre el panel de snippets */}
-      <SnippetFloatingPanel context={context} sessionId={snippetSessionId} />
+  {/* Snippets deshabilitados a petición del usuario */}
       <div className="grow flex relative overflow-hidden">
         <Code containerRef={containerRef} editorRef={editorRef} init={init} />
         {!isZen && panelPosition === 'right' && <VerticalPanel context={context} />}

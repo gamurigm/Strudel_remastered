@@ -76,7 +76,7 @@ async function getModule(name) {
 const initialCode = `// LOADING`;
 
 export function useReplContext(options = {}) {
-  const { solo = true } = options; // solo=true mantiene comportamiento anterior; en MultiRepl se usará false
+  const { solo = true, sessionId } = options; // solo=true mantiene comportamiento anterior; en MultiRepl se usará false
   const { isSyncEnabled, audioEngineTarget } = useSettings();
   const shouldUseWebaudio = audioEngineTarget !== audioEngineTargets.osc;
   const defaultOutput = shouldUseWebaudio ? webaudioOutput : superdirtOutput;
@@ -237,16 +237,12 @@ export function useReplContext(options = {}) {
         import.meta.hot.accept('./defaultTune.mjs', (newModule) => {
           try {
             const newCode = newModule?.defaultTune;
-            if (newCode && editorRef.current) {
-              // update editor content
+            const isActiveMulti = (!solo) && (typeof window !== 'undefined') && (window.__strudelActiveSessionId === sessionId);
+            const shouldAffectThis = solo || isActiveMulti;
+            if (newCode && editorRef.current && shouldAffectThis) {
+              // Update editor content and, if allowed, auto-evaluate
               editorRef.current.setCode(newCode);
-              // try to evaluate (will only play if audio has been enabled by user)
-              try {
-                editorRef.current.evaluate();
-              } catch (e) {
-                // ignore evaluation errors during HMR
-                console.warn('Auto-evaluate failed after HMR:', e);
-              }
+              try { editorRef.current.evaluate(); } catch (e) { console.warn('Auto-evaluate failed after HMR:', e); }
             }
           } catch (err) {
             console.error('Error handling defaultTune HMR update', err);

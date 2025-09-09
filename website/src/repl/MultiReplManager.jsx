@@ -26,7 +26,7 @@ function createSession(channel, code = '') {
 
 function Session({ session, active, registerContext, initialCode }) {
   // solo:false permite que múltiples sesiones reproduzcan simultáneamente
-  const ctx = useReplContext({ solo: false });
+  const ctx = useReplContext({ solo: false, sessionId: session.id });
   const injectedRef = useRef(false);
 
   // After editor init, inject stored code (once)
@@ -56,7 +56,7 @@ function Session({ session, active, registerContext, initialCode }) {
         active ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
       ].join(' ')}
     >
-      <ReplEditor context={ctx} />
+  <ReplEditor context={ctx} sessionId={session.id} />
     </div>
   );
 }
@@ -64,9 +64,17 @@ function Session({ session, active, registerContext, initialCode }) {
 export default function MultiReplManager() {
   const [sessions, setSessions] = useState([]); // {id,name,code,color}
   const [activeId, setActiveId] = useState(null);
+  // expose active session id globally for conditional HMR evaluate
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.__strudelActiveSessionId = activeId;
+    }
+  }, [activeId]);
   const contextsRef = useRef(new Map());
   const mpRef = useRef();
   const suppressIncoming = useRef(false); // avoid echo loops
+
+  // Snippet helper removed per user request
 
   // load sessions from localStorage
   useEffect(() => {
