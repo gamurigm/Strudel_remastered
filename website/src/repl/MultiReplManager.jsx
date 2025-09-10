@@ -166,15 +166,27 @@ export default function MultiReplManager() {
     });
   };
   const removeSession = (id) => {
-    setSessions((prev) => prev.filter((s) => s.id !== id));
-    if (activeId === id) {
-      setTimeout(() => {
-        setActiveId((p) => {
-          const remaining = sessions.filter((s) => s.id !== id);
-            return remaining.length ? remaining[0].id : null;
-        });
-      }, 0);
-    }
+    // Detener audio del canal antes de eliminarlo
+    try {
+      const ctx = contextsRef.current.get(id);
+      if (ctx) {
+        if (ctx.started && ctx.handleTogglePlay) {
+          try { ctx.handleTogglePlay(); } catch {}
+        }
+        // Fallback extra por si el estado interno quedó inconsistente
+        try { ctx.editorRef?.current?.repl?.stop?.(); } catch {}
+      }
+    } catch {}
+    // Eliminar del mapa de contextos
+    contextsRef.current.delete(id);
+    // Actualizar sesiones y activeId en un solo paso
+    setSessions((prev) => {
+      const remaining = prev.filter((s) => s.id !== id);
+      if (activeId === id) {
+        setActiveId(remaining.length ? remaining[0].id : null);
+      }
+      return remaining;
+    });
   };
 
   const renameSession = (id, name) => {
