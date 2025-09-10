@@ -23,6 +23,7 @@ export function MiniRepl({
   hideHeader = false,
   canvasHeight = 100,
   onTrigger,
+  onEvaluate, // nuevo callback para guardar código tras evaluate
   punchcard,
   punchcardLabels = true,
   claviature,
@@ -46,7 +47,7 @@ export function MiniRepl({
   const init = useCallback(({ code, autodraw }) => {
     const drawContext = canvasId ? document.querySelector('#' + canvasId)?.getContext('2d') : getDrawContext();
 
-    const editor = new StrudelMirror({
+  const editor = new StrudelMirror({
       id,
       defaultOutput: webaudioOutput,
       getTime: () => getAudioContext().currentTime,
@@ -88,6 +89,23 @@ export function MiniRepl({
       afterEval: ({ code }) => setVersionDefaultsFrom(code),
       mondo,
     });
+    // Hook para capturar evaluate (tecla o botón)
+    if (onEvaluate) {
+      const originalEval = editor.evaluate?.bind(editor);
+      if (originalEval) {
+        editor.evaluate = (...args) => {
+          const result = originalEval(...args);
+          try {
+            const currentCode = editor.getCode ? editor.getCode() : editor.code;
+            onEvaluate(currentCode);
+          } catch (e) {
+            // silencioso
+          }
+          return result;
+        };
+      }
+    }
+
     // init settings
     editor.setCode(code);
     editorRef.current = editor;
