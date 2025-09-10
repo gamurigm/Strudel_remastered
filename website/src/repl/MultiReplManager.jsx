@@ -6,6 +6,7 @@ import XMarkIcon from '@heroicons/react/20/solid/XMarkIcon';
 import PlayIcon from '@heroicons/react/20/solid/PlayIcon';
 import PauseIcon from '@heroicons/react/20/solid/PauseIcon';
 import { StrudelMPClient } from './multiplayer/client.mjs';
+import { defaultTune } from './defaultTune.mjs';
 
 const LS_KEY = 'strudelMultiReplsV1';
 const CHANNEL_COLORS = [
@@ -31,12 +32,26 @@ function Session({ session, active, registerContext, initialCode }) {
 
   // After editor init, inject stored code (once)
   useEffect(() => {
-    if (!active && !session.code) return; // if inactive & empty skip
     const ed = ctx.editorRef.current;
     if (ed && !injectedRef.current) {
       try {
         const current = ed.getCode?.() || '';
-        if (!current || current === '// LOADING') {
+        if (!active && !session.code) {
+          // In multi-repl, avoid auto-loading defaultTune in inactive/empty sessions.
+          // Force them to start silent to prevent cacophony on "Play all".
+          // Use a small delay to win any race against async defaultTune load in useReplContext.
+          setTimeout(() => {
+            try { ed.setCode(''); } catch {}
+          }, 30);
+        } else if (active) {
+          // For the active session: if there's no saved code and the editor is empty, inject defaultTune
+          if (!session.code && (!current || current === '// LOADING' || !current.trim())) {
+            ed.setCode(defaultTune);
+          } else if (!current || current === '// LOADING') {
+            ed.setCode(session.code || initialCode || '');
+          }
+        } else if (!current || current === '// LOADING') {
+          // Non-active session with existing saved code
           ed.setCode(session.code || initialCode || '');
         }
       } catch {}
@@ -176,31 +191,59 @@ export default function MultiReplManager() {
   };
 
   const playAll = () => {
+    let anyStarted = false;
     sessions.forEach((s) => {
       const ctx = contextsRef.current.get(s.id);
       const mirror = ctx?.editorRef?.current;
       if (!ctx || !mirror) return;
-      // asegurar que código persistido esté cargado si editor aún muestra placeholder
       try {
-        if (mirror.code === '// LOADING' && s.code) {
-          mirror.setCode(s.code);
+        let current = mirror.getCode?.() || '';
+        const hasSaved = typeof s.code === 'string' && s.code.trim().length > 0;
+  // Si está vacío pero hay snapshot guardado, cargarlo (solo canales con snapshot propio)
+        if (s.id !== activeId && (!current || current === '// LOADING') && hasSaved) {
+          try { mirror.setCode(s.code); current = s.code; } catch {}
         }
-      } catch {}
-      if (!ctx.started) {
-        try { mirror.evaluate(); } catch (e) { console.warn('playAll evaluate fail', e); }
+        // Skip si sigue vacío
+        if (!current || !current.trim()) return;
+        // Si no está iniciado todavía, iniciar (toggle hace también la evaluación inicial interna)
+        if (!ctx.started) {
+          try { ctx.handleTogglePlay?.(); anyStarted = true; } catch (e) { console.warn('playAll toggle fail', e); }
+        } else {
+          // Ya estaba sonando: sólo reevaluar para refrescar cambios
+          try { ctx.handleEvaluate?.(); } catch (e) { console.warn('playAll eval fail', e); }
+          anyStarted = true;
+        }
+      } catch (e) {
+        console.warn('playAll channel prep failed', e);
       }
     });
-    setSessions((p) => [...p]); // refrescar indicadores
+    // Si nada arrancó (p.ej. editores aún inicializándose), reintentar una vez tras un pequeño delay
+    if (!anyStarted) {
+      setTimeout(() => {
+        sessions.forEach((s) => {
+          const ctx = contextsRef.current.get(s.id);
+          if (ctx && !ctx.started) {
+            try { ctx.handleTogglePlay?.(); } catch {}
+          }
+        });
+        setSessions((p) => [...p]);
+      }, 180);
+    }
+    setSessions((p) => [...p]);
   };
   const stopAll = () => {
     sessions.forEach((s) => {
       const ctx = contextsRef.current.get(s.id);
-      const mirror = ctx?.editorRef?.current;
-      if (mirror?.repl?.stop) {
-        try { mirror.repl.stop(); } catch {}
+      if (!ctx) return;
+      // Usar el mismo camino (toggle) para garantizar que 'started' se sincroniza correctamente.
+      if (ctx.started && ctx.handleTogglePlay) {
+        try { ctx.handleTogglePlay(); } catch {}
+      } else if (ctx.editorRef?.current?.repl?.stop) {
+        // Fallback: si por alguna razón el estado dice que no está iniciado pero suena, detener directo.
+        try { ctx.editorRef.current.repl.stop(); } catch {}
       }
     });
-    setSessions((p) => [...p]); // refrescar indicadores
+    setSessions((p) => [...p]);
   };
 
   return (

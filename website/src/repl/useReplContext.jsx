@@ -181,7 +181,7 @@ export function useReplContext(options = {}) {
           editor.view?.focus(); 
         } catch {}
       });
-    } catch (err) {
+  } catch (err) {
       console.warn('Error configurando editor:', err);
     }
 
@@ -197,6 +197,15 @@ export function useReplContext(options = {}) {
       console.warn('Error injecting styles:', err);
     }    // init settings
     initCode().then(async (decoded) => {
+      // In multi-repl mode (solo=false), keep channels independent and empty by default.
+      if (!solo) {
+        try {
+          editor.setCode('');
+          logger('Multi session ready. Paste or type your code for this channel.', 'highlight');
+        } catch {}
+        return;
+      }
+
       let code, msg;
       if (decoded) {
         code = decoded;
@@ -204,7 +213,7 @@ export function useReplContext(options = {}) {
       } else if (latestCode) {
         code = latestCode;
         msg = `Your last session has been loaded!`;
-        } else {
+      } else {
         /* const { code: randomTune, name } = await getRandomTune();
         code = randomTune; */
         code = defaultTune;
@@ -213,10 +222,10 @@ export function useReplContext(options = {}) {
       editor.setCode(code);
       setDocumentTitle(code);
       logger(`Welcome to Strudel! ${msg} Press play or hit ctrl+enter to run it!`, 'highlight');
-      // Fallback: if after a short delay the editor is still empty, force defaultTune
+      // Fallback only for solo mode
       setTimeout(() => {
         try {
-          if (editorRef.current) {
+          if (solo && editorRef.current) {
             const current = editorRef.current.getCode ? editorRef.current.getCode() : editorRef.current.view?.state?.doc?.toString();
             if (!current || !current.trim()) {
               editorRef.current.setCode(defaultTune);
