@@ -33,33 +33,88 @@ export async function POST({ request }) {
     } catch (e) {
       return json({ ok: false, error: 'No se pudo leer archivo', debug: { tried: [primary, alt], cwd, message: e.message } }, 500);
     }
-    const start = '// <AUTO-DEFAULTS-START>';
-    const end = '// <AUTO-DEFAULTS-END>';
+  const start = '// <AUTO-DEFAULTS-START>';
+  const end = '// <AUTO-DEFAULTS-END>';
     const startIdx = content.indexOf(start);
     const endIdx = content.indexOf(end);
     if (startIdx === -1 || endIdx === -1 || endIdx < startIdx) {
       return json({ ok: false, error: 'Marcadores no encontrados' }, 500);
     }
-    const indent = '  ';
-    const newLines = beats.map(b => `${indent}\`${escapeTemplate(b)}\``).join('\n');
-    // Reemplazar sólo el bloque entre marcadores conservando lo demás
-    const regex = /const DEFAULT_BEATS = \[([\s\S]*?)\];/m;
-    content = content.replace(regex, (match) => {
-      return `const DEFAULT_BEATS = [\n${start}\n${newLines}\n${end}\n];`;
-    });
+  // Construir bloque nuevo
+  const indent = '  ';
+  const stamp = `// updated ${new Date().toISOString()}`;
+  const newLines = [stamp, ...beats.map((b,i) => `${indent}\`${escapeTemplate(b)}\`${i < beats.length-1 ? ',' : ''}`)].join('\n');
+  // localizar posición exacta entre marcadores dentro del array
+  const startLineIdx = content.indexOf(start);
+  const endLineIdx = content.indexOf(end);
+  const before = content.slice(0, startLineIdx + start.length);
+  const after = content.slice(endLineIdx); // incluye marcador END en adelante
+  // Extraer prefijo hasta START (antes del marcador), y sufijo desde END
+  // Reemplazar el contenido intermedio (líneas previas entre marcadores)
+  const betweenRegex = new RegExp(`${escapeReg(start)}([\r\n]|.)*?${escapeReg(end)}`);
+  const beforeChange = content;
+  if (betweenRegex.test(content)) {
+    content = content.replace(betweenRegex, `${start}\n${newLines}\n${end}`);
+  } else {
+    // fallback: insertar de nuevo el bloque completo dentro del array
+    const arrayRegex = /const DEFAULT_BEATS = \[([\s\S]*?)\];/m;
+    if (arrayRegex.test(content)) {
+      content = content.replace(arrayRegex, (m) => `const DEFAULT_BEATS = [\n${start}\n${newLines}\n${end}\n];`);
+    }
+  }
+  const changed = beforeChange !== content;
     try {
       await fs.writeFile(targetPath, content, 'utf8');
     } catch(e) {
       return json({ ok:false, error:'No se pudo escribir archivo', debug:{ targetPath, message:e.message } }, 500);
     }
-    return json({ ok: true, path: targetPath });
+  // Releer bloque final para confirmar
+  let finalBlock = null;
+  try {
+    const reread = await fs.readFile(targetPath, 'utf8');
+    const m2 = reread.match(new RegExp(`${escapeReg(start)}([\s\S]*?)${escapeReg(end)}`));
+    if (m2) finalBlock = m2[1];
+  } catch {}
+  return json({ ok: true, path: targetPath, count: beats.length, changed, preview: beats.slice(0,3), finalBlock });
   } catch (e) {
     return json({ ok: false, error: e.message }, 500);
   }
 }
 
+// GET: devuelve el bloque actual entre marcadores para verificación
+export async function GET() {
+  if (process.env.NODE_ENV === 'production') {
+    return json({ ok: false, error: 'Disabled in production' }, 403);
+  }
+  try {
+    const cwd = process.cwd();
+    const primary = path.resolve(cwd, 'src', 'repl', 'components', 'panel', 'WelcomeBeats.jsx');
+    const alt = path.resolve(cwd, 'website', 'src', 'repl', 'components', 'panel', 'WelcomeBeats.jsx');
+    let targetPath = primary;
+    try { await fs.access(primary); } catch { targetPath = alt; }
+    const content = await fs.readFile(targetPath, 'utf8');
+    const start = '// <AUTO-DEFAULTS-START>';
+    const end = '// <AUTO-DEFAULTS-END>';
+    const betweenRegex = new RegExp(`${escapeReg(start)}([\s\S]*?)${escapeReg(end)}`);
+    const m = content.match(betweenRegex);
+    if (!m) return json({ ok:false, error:'Marcadores no encontrados' }, 500);
+    const rawBlock = m[1];
+    const lines = rawBlock.split('\n')
+      .map(l => l.trim())
+      .filter(l => l.startsWith('`') && l.endsWith('`') || l.startsWith('`') && l.endsWith('`,'));
+    const beats = lines.map(l => l.replace(/`,?$/,'').replace(/^`/,''));
+    return json({ ok:true, path: targetPath, count: beats.length, beats });
+  } catch (e) {
+    return json({ ok:false, error: e.message }, 500);
+  }
+}
+
 function escapeTemplate(str) {
   return str.replace(/`/g, '\\`');
+}
+
+function escapeReg(str){
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function json(obj, status = 200) {

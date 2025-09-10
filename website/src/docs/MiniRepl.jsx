@@ -24,6 +24,7 @@ export function MiniRepl({
   canvasHeight = 100,
   onTrigger,
   onEvaluate, // nuevo callback para guardar código tras evaluate
+  onReady, // expone editor al padre
   punchcard,
   punchcardLabels = true,
   claviature,
@@ -109,6 +110,9 @@ export function MiniRepl({
     // init settings
     editor.setCode(code);
     editorRef.current = editor;
+    if (onReady) {
+      try { onReady(editor); } catch (e) { /* noop */ }
+    }
   }, []);
 
   const [replState, setReplState] = useState({});

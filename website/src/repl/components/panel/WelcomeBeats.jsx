@@ -1,11 +1,16 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { MiniRepl } from '@src/docs/MiniRepl';
 
 // Defaults auto-escribibles (seccion marcada) ------------------------------
 const DEFAULT_BEATS = [
 // <AUTO-DEFAULTS-START>
-  `$: sound("bd*2 ~ bd sd").bank("Linn9000")
-$: sound("hh*8").gain("[0.2 0.5 0.9 0.5]*2").hpf(8000)`
+// updated 2025-09-10T23:09:23.258Z
+  `sound("bd sdasdassasd808")hjgjhg`,
+  `sound("hh bd")`,
+  `.`,
+  `hola ptu puto`,
+  `asdsdsadd sd [~ bd] sd").bank("RolandTR808")`,
+  `sound(asddddddddddddddddddddddddddd"bd sd [~ bd] sd").bank("RolandTR808")`
 // <AUTO-DEFAULTS-END>
 ];
 
@@ -13,14 +18,19 @@ $: sound("hh*8").gain("[0.2 0.5 0.9 0.5]*2").hpf(8000)`
 export function WelcomeBeats({
   storageKey = 'welcomeBeatsV1',
   defaults = DEFAULT_BEATS,
-  maxCols = 3,
+  maxCols = 1,
   maxHeight = 180,
   enableFileSave = true, // bandera para mostrar botón guardar archivo
+  autoSave = true,       // auto-guardar al hacer evaluate
+  autoSaveDelay = 800,   // ms debounce
 }) {
   const [beats, setBeats] = useState(defaults);
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState(null);
+  const editorRefs = useRef([]);
+  const autoSaveTimer = useRef(null);
+  const lastSent = useRef(null);
 
   // Cargar de localStorage
   useEffect(() => {
@@ -39,14 +49,34 @@ export function WelcomeBeats({
     try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch (e) { /* noop */ }
   }, [storageKey]);
 
+  const triggerAutoSave = useCallback((nextBeats) => {
+    if (!enableFileSave || !autoSave) return;
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(() => {
+      // evitar enviar si no hay cambios reales vs último payload
+      const payload = JSON.stringify(nextBeats);
+      if (payload === lastSent.current) return;
+      lastSent.current = payload;
+      // reutiliza lógica de save, pero mínima: sólo POST
+      fetch('/api/update-welcome-beats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ beats: nextBeats }),
+      }).then(r => r.text().then(t => {
+        try { const j = JSON.parse(t); if (!j.ok) console.warn('autoSave error', j); } catch {/* noop */}
+      })).catch(()=>{});
+    }, autoSaveDelay);
+  }, [autoSave, autoSaveDelay, enableFileSave]);
+
   const onEval = useCallback((index) => (code) => {
     setBeats(prev => {
       const copy = [...prev];
       copy[index] = code;
       try { localStorage.setItem(storageKey, JSON.stringify(copy)); } catch (e) { /* noop */ }
+      triggerAutoSave(copy);
       return copy;
     });
-  }, [storageKey]);
+  }, [storageKey, triggerAutoSave]);
 
   const addBeat = () => {
     persist([...beats, `sound("bd sd [~ bd] sd").bank("RolandTR808")`]);
@@ -59,12 +89,25 @@ export function WelcomeBeats({
   }, [beats, defaults, persist]);
 
   const saveToSource = async () => {
+    // capturar código vivo de editores (sin necesidad de pulsar UPDATE)
+    const live = editorRefs.current.map(ed => {
+      try { return ed?.getCode ? ed.getCode() : null; } catch { return null; }
+    });
+    let outgoing = beats;
+    if (live.some(c => typeof c === 'string')) {
+      const merged = beats.map((b,i)=> (typeof live[i] === 'string' ? live[i] : b));
+      if (JSON.stringify(merged) !== JSON.stringify(beats)) {
+        outgoing = merged;
+        setBeats(merged);
+        try { localStorage.setItem(storageKey, JSON.stringify(merged)); } catch {}
+      }
+    }
     setSaving(true); setSaveMsg(null);
     try {
       const res = await fetch('/api/update-welcome-beats', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ beats }),
+        body: JSON.stringify({ beats: outgoing }),
       });
       const text = await res.text();
       let json;
@@ -72,7 +115,7 @@ export function WelcomeBeats({
         throw new Error('Respuesta no JSON (status ' + res.status + ')');
       }
       if (!res.ok || !json.ok) throw new Error(json.error || 'Error desconocido');
-      setSaveMsg('Archivo actualizado');
+      setSaveMsg('Archivo actualizado (' + json.count + (json.changed ? ' cambios' : ' sin cambios') + ')');
     } catch (e) {
       setSaveMsg('No se pudo guardar: ' + e.message);
     } finally { setSaving(false); }
@@ -105,11 +148,13 @@ export function WelcomeBeats({
               punchcardLabels={false}
               maxHeight={maxHeight}
               onEvaluate={onEval(i)}
+              onReady={(ed)=>{ editorRefs.current[i]=ed; }}
             />
           </div>
         ))}
       </div>
       {enableFileSave && <p className="mt-2 text-[10px] opacity-50">Guardado en archivo sólo funciona en modo dev (no producción).</p>}
+  {enableFileSave && autoSave && <p className="mt-1 text-[10px] opacity-40">Auto-save después de {autoSaveDelay}ms tras UPDATE/Evaluate.</p>}
     </>
   );
 }
