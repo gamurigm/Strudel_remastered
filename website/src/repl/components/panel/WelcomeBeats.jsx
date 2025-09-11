@@ -4,8 +4,10 @@ import { MiniRepl } from '@src/docs/MiniRepl';
 // Defaults auto-escribibles (seccion marcada) ------------------------------
 const DEFAULT_BEATS = [
 // <AUTO-DEFAULTS-START>
-// updated 2025-09-11T00:52:56.025Z
-  `tu erere locoh?`
+// updated 2025-09-11T00:54:36.453Z
+  `tu erere locoh?`,
+  `sound("bd sd [~ bd] sd").bank("RolandTR808")`,
+  `yo te lo digoh q tuer q re loh k?`
 // <AUTO-DEFAULTS-END>
 ];
 
