@@ -1,0 +1,59 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: ankane/pgvector:latest
+    container_name: strudel_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: pass
+      POSTGRES_USER: postgres
+      POSTGRES_DB: strudel
+    ports:
+      - "5433:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./docker/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_USER:-postgres}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: strudel_pgadmin
+    depends_on:
+      - postgres
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+    ports:
+      - "8081:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+  # Opción: servicio para desarrollo del sitio (comentado por defecto)
+  # app:
+  #   build: .
+  #   command: sh -c "pnpm install && pnpm dev"
+  #   working_dir: /app/strudel
+  #   volumes:
+  #     - ./:/app/strudel
+  #   environment:
+  #     NODE_ENV: development
+  #     PG_HOST: postgres
+  #     PG_PORT: 5432
+  #     PG_USER: ${PG_USER:-postgres}
+  #     PG_PASSWORD: ${PG_PASSWORD:-pass}
+  #     PG_DATABASE: ${PG_DATABASE:-strudel}
+  #   ports:
+  #     - "4321:4321" # ajusta si tu dev server usa otro puerto
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+
+volumes:
+  pg_data:
+  pgadmin_data:

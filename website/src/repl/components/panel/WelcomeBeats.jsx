@@ -4,13 +4,9 @@ import { MiniRepl } from '@src/docs/MiniRepl';
 // Defaults auto-escribibles (seccion marcada) ------------------------------
 const DEFAULT_BEATS = [
 // <AUTO-DEFAULTS-START>
-// updated 2025-09-10T23:09:23.258Z
-  `sound("bd sdasdassasd808")hjgjhg`,
-  `sound("hh bd")`,
-  `.`,
-  `hola ptu puto`,
-  `asdsdsadd sd [~ bd] sd").bank("RolandTR808")`,
-  `sound(asddddddddddddddddddddddddddd"bd sd [~ bd] sd").bank("RolandTR808")`
+// updated 2025-09-11T00:16:13.171Z
+  `6a99`,
+  `asdsdsoundasd`
 // <AUTO-DEFAULTS-END>
 ];
 
@@ -28,26 +24,114 @@ export function WelcomeBeats({
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState(null);
+  const [dbSynced, setDbSynced] = useState(false);
   const editorRefs = useRef([]);
   const autoSaveTimer = useRef(null);
   const lastSent = useRef(null);
 
-  // Cargar de localStorage
+  // Cargar de localStorage y sincronizar con BD
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(storageKey);
-      if (raw) {
-        const arr = JSON.parse(raw);
-        if (Array.isArray(arr) && arr.length) setBeats(arr);
+    const loadData = async () => {
+      try {
+        // Primero intentar cargar desde localStorage
+        const raw = localStorage.getItem(storageKey);
+        let localBeats = null;
+        if (raw) {
+          const arr = JSON.parse(raw);
+          if (Array.isArray(arr) && arr.length) localBeats = arr;
+        }
+        
+        // Intentar cargar desde BD
+        try {
+          const dbResponse = await fetch(`/api/sync-beats?storageKey=${storageKey}`);
+          if (dbResponse.ok) {
+            const dbData = await dbResponse.json();
+            if (dbData.ok && dbData.beats && dbData.beats.length > 0) {
+              setBeats(dbData.beats);
+              setDbSynced(true);
+              console.log(`📖 Cargados ${dbData.beats.length} beats desde BD`);
+              setLoaded(true);
+              return; // Usar datos de BD si están disponibles
+            }
+          }
+        } catch (dbError) {
+          console.warn('⚠️ No se pudo cargar desde BD, usando localStorage:', dbError.message);
+        }
+        
+        // Si no hay datos en BD, usar localStorage o defaults
+        if (localBeats) {
+          setBeats(localBeats);
+          // Sincronizar localStorage con BD en background
+          syncToDatabase(localBeats);
+        } else {
+          setBeats(defaults);
+          // Sincronizar defaults con BD en background
+          syncToDatabase(defaults);
+        }
+      } catch (e) { 
+        console.error('Error cargando datos:', e);
+        setBeats(defaults);
       }
-    } catch (e) { /* noop */ }
-    setLoaded(true);
-  }, [storageKey]);
+      setLoaded(true);
+    };
+    
+    loadData();
+  }, [storageKey, defaults]);
+
+  // Función para sincronizar con base de datos (con fallback a API)
+  const syncToDatabase = useCallback(async (beatsData) => {
+    // PRIORIDAD 1: Intentar guardar en base de datos
+    try {
+      const response = await fetch('/api/sync-beats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          beats: beatsData, 
+          storageKey: storageKey,
+          action: 'update' // Siempre usar update (es inteligente y evita duplicados)
+        }),
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.ok) {
+          setDbSynced(true);
+          console.log(`💾 ${result.count} beats guardados en BD (${result.action})`);
+          return; // Éxito en BD, no necesitamos fallback
+        }
+      }
+      
+      throw new Error(`BD no disponible (status: ${response.status})`);
+    } catch (dbError) {
+      console.warn('⚠️ BD no disponible, usando API fallback:', dbError.message);
+      setDbSynced(false);
+      
+      // FALLBACK: Usar la API existente si BD no está disponible
+      try {
+        const fallbackResponse = await fetch('/api/update-welcome-beats', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ beats: beatsData }),
+        });
+        
+        if (fallbackResponse.ok) {
+          const fallbackResult = await fallbackResponse.json();
+          if (fallbackResult.ok) {
+            console.log(`📄 ${beatsData.length} beats guardados en archivo (fallback)`);
+          }
+        }
+      } catch (fallbackError) {
+        console.error('❌ Error en ambos sistemas (BD + API):', fallbackError.message);
+      }
+    }
+  }, [storageKey, dbSynced]);
 
   const persist = useCallback((next) => {
     setBeats(next);
     try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch (e) { /* noop */ }
-  }, [storageKey]);
+    // Sincronizar con BD en background
+    syncToDatabase(next);
+  }, [storageKey, syncToDatabase]);
 
   const triggerAutoSave = useCallback((nextBeats) => {
     if (!enableFileSave || !autoSave) return;
@@ -57,16 +141,11 @@ export function WelcomeBeats({
       const payload = JSON.stringify(nextBeats);
       if (payload === lastSent.current) return;
       lastSent.current = payload;
-      // reutiliza lógica de save, pero mínima: sólo POST
-      fetch('/api/update-welcome-beats', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ beats: nextBeats }),
-      }).then(r => r.text().then(t => {
-        try { const j = JSON.parse(t); if (!j.ok) console.warn('autoSave error', j); } catch {/* noop */}
-      })).catch(()=>{});
+      
+      // Usar lógica unificada: BD primero, API como fallback
+      syncToDatabase(nextBeats);
     }, autoSaveDelay);
-  }, [autoSave, autoSaveDelay, enableFileSave]);
+  }, [autoSave, autoSaveDelay, enableFileSave, syncToDatabase]);
 
   const onEval = useCallback((index) => (code) => {
     setBeats(prev => {
@@ -103,22 +182,16 @@ export function WelcomeBeats({
       }
     }
     setSaving(true); setSaveMsg(null);
+    
+    // Usar lógica unificada: BD primero, API como fallback
     try {
-      const res = await fetch('/api/update-welcome-beats', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ beats: outgoing }),
-      });
-      const text = await res.text();
-      let json;
-      try { json = JSON.parse(text); } catch {
-        throw new Error('Respuesta no JSON (status ' + res.status + ')');
-      }
-      if (!res.ok || !json.ok) throw new Error(json.error || 'Error desconocido');
-      setSaveMsg('Archivo actualizado (' + json.count + (json.changed ? ' cambios' : ' sin cambios') + ')');
+      await syncToDatabase(outgoing);
+      setSaveMsg(`Guardado exitoso (${outgoing.length} beats) - ${dbSynced ? 'BD' : 'Archivo'}`);
     } catch (e) {
-      setSaveMsg('No se pudo guardar: ' + e.message);
-    } finally { setSaving(false); }
+      setSaveMsg('Error al guardar: ' + e.message);
+    } finally { 
+      setSaving(false); 
+    }
   };
 
   return (
@@ -132,6 +205,11 @@ export function WelcomeBeats({
         )}
         {!loaded && <span className="text-[10px] opacity-50">cargando…</span>}
         {saveMsg && <span className="text-[10px] opacity-70">{saveMsg}</span>}
+        {loaded && (
+          <span className={`text-[10px] opacity-50 ${dbSynced ? 'text-green-400' : 'text-yellow-400'}`}>
+            {dbSynced ? '� BD activa' : '📄 API fallback'}
+          </span>
+        )}
         <span className="ml-auto pr-1 opacity-40">{beats.length}</span>
       </div>
       <div className={`grid gap-4 md:grid-cols-${Math.min(maxCols, beats.length)}`}>
@@ -153,8 +231,12 @@ export function WelcomeBeats({
           </div>
         ))}
       </div>
-      {enableFileSave && <p className="mt-2 text-[10px] opacity-50">Guardado en archivo sólo funciona en modo dev (no producción).</p>}
-  {enableFileSave && autoSave && <p className="mt-1 text-[10px] opacity-40">Auto-save después de {autoSaveDelay}ms tras UPDATE/Evaluate.</p>}
+      {enableFileSave && (
+        <div className="mt-2 text-[10px] opacity-50 space-y-1">
+          <p>💾 Guardado automático: BD primero, API como fallback si BD no disponible.</p>
+          {autoSave && <p>⚡ Auto-save tras {autoSaveDelay}ms después de UPDATE/Evaluate.</p>}
+        </div>
+      )}
     </>
   );
 }
