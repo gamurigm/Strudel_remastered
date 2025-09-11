@@ -4,9 +4,8 @@ import { MiniRepl } from '@src/docs/MiniRepl';
 // Defaults auto-escribibles (seccion marcada) ------------------------------
 const DEFAULT_BEATS = [
 // <AUTO-DEFAULTS-START>
-// updated 2025-09-11T00:16:13.171Z
-  `6a99`,
-  `asdsdsoundasd`
+// updated 2025-09-11T00:52:56.025Z
+  `tu erere locoh?`
 // <AUTO-DEFAULTS-END>
 ];
 
@@ -29,11 +28,47 @@ export function WelcomeBeats({
   const autoSaveTimer = useRef(null);
   const lastSent = useRef(null);
 
-  // Cargar de localStorage y sincronizar con BD
+  // ESTRATEGIA HÍBRIDA: BD es fuente de verdad, archivo se auto-actualiza
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Primero intentar cargar desde localStorage
+        // PASO 1: Siempre intentar cargar desde BD primero
+        let dbBeats = null;
+        let dbAvailable = false;
+        
+        try {
+          const dbResponse = await fetch(`/api/sync-beats?storageKey=${storageKey}`);
+          if (dbResponse.ok) {
+            const dbData = await dbResponse.json();
+            if (dbData.ok && dbData.beats && dbData.beats.length > 0) {
+              dbBeats = dbData.beats;
+              dbAvailable = true;
+              console.log(`📖 BD disponible: ${dbData.beats.length} beats encontrados`);
+            }
+          }
+        } catch (dbError) {
+          console.warn('⚠️ BD no disponible:', dbError.message);
+        }
+        
+        // PASO 2: Si BD tiene datos, usarlos (BD es fuente de verdad)
+        if (dbBeats && dbBeats.length > 0) {
+          setBeats(dbBeats);
+          setDbSynced(true);
+          console.log(`✅ Usando ${dbBeats.length} beats de BD (fuente de verdad)`);
+          
+          // Actualizar localStorage para consistency
+          try { 
+            localStorage.setItem(storageKey, JSON.stringify(dbBeats)); 
+          } catch (e) { /* noop */ }
+          
+          setLoaded(true);
+          return;
+        }
+        
+        // PASO 3: Si BD está vacía, usar archivo → localStorage → defaults (en ese orden)
+        console.log(`📄 BD vacía, usando estrategia de fallback...`);
+        
+        // Primero intentar localStorage
         const raw = localStorage.getItem(storageKey);
         let localBeats = null;
         if (raw) {
@@ -41,36 +76,29 @@ export function WelcomeBeats({
           if (Array.isArray(arr) && arr.length) localBeats = arr;
         }
         
-        // Intentar cargar desde BD
-        try {
-          const dbResponse = await fetch(`/api/sync-beats?storageKey=${storageKey}`);
-          if (dbResponse.ok) {
-            const dbData = await dbResponse.json();
-            if (dbData.ok && dbData.beats && dbData.beats.length > 0) {
-              setBeats(dbData.beats);
-              setDbSynced(true);
-              console.log(`📖 Cargados ${dbData.beats.length} beats desde BD`);
-              setLoaded(true);
-              return; // Usar datos de BD si están disponibles
-            }
-          }
-        } catch (dbError) {
-          console.warn('⚠️ No se pudo cargar desde BD, usando localStorage:', dbError.message);
+        // Decidir qué datos usar
+        let finalBeats;
+        if (localBeats) {
+          finalBeats = localBeats;
+          console.log(`💾 Usando ${localBeats.length} beats de localStorage`);
+        } else {
+          finalBeats = defaults;
+          console.log(`🏠 Usando ${defaults.length} beats por defecto del archivo`);
         }
         
-        // Si no hay datos en BD, usar localStorage o defaults
-        if (localBeats) {
-          setBeats(localBeats);
-          // Sincronizar localStorage con BD en background
-          syncToDatabase(localBeats);
-        } else {
-          setBeats(defaults);
-          // Sincronizar defaults con BD en background
-          syncToDatabase(defaults);
+        setBeats(finalBeats);
+        setDbSynced(dbAvailable); // false si BD no estaba disponible
+        
+        // Si BD está disponible pero vacía, sincronizar estos datos iniciales
+        if (dbAvailable) {
+          console.log(`🔄 Sincronizando datos iniciales con BD...`);
+          syncToDatabase(finalBeats);
         }
+        
       } catch (e) { 
         console.error('Error cargando datos:', e);
         setBeats(defaults);
+        setDbSynced(false);
       }
       setLoaded(true);
     };
@@ -207,7 +235,7 @@ export function WelcomeBeats({
         {saveMsg && <span className="text-[10px] opacity-70">{saveMsg}</span>}
         {loaded && (
           <span className={`text-[10px] opacity-50 ${dbSynced ? 'text-green-400' : 'text-yellow-400'}`}>
-            {dbSynced ? '� BD activa' : '📄 API fallback'}
+            {dbSynced ? '🔄 BD ↔ Archivo' : '📄 Solo archivo'}
           </span>
         )}
         <span className="ml-auto pr-1 opacity-40">{beats.length}</span>
@@ -233,7 +261,7 @@ export function WelcomeBeats({
       </div>
       {enableFileSave && (
         <div className="mt-2 text-[10px] opacity-50 space-y-1">
-          <p>💾 Guardado automático: BD primero, API como fallback si BD no disponible.</p>
+          <p>� Estrategia híbrida: BD es fuente de verdad, archivo se auto-actualiza.</p>
           {autoSave && <p>⚡ Auto-save tras {autoSaveDelay}ms después de UPDATE/Evaluate.</p>}
         </div>
       )}

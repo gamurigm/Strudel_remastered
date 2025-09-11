@@ -1,11 +1,58 @@
 // API endpoint para sincronizar WelcomeBeats con la base de datos
+import { readFileSync, writeFileSync } from 'fs';
+import { join } from 'path';
+
 export const prerender = false;
+
+// Función para actualizar el archivo fuente WelcomeBeats.jsx
+async function updateSourceFile(beats, storageKey = 'welcomeBeatsV1') {
+  // Solo actualizar para el storageKey principal
+  if (storageKey !== 'welcomeBeatsV1') return;
+  
+  try {
+    const filePath = join(process.cwd(), 'src', 'repl', 'components', 'panel', 'WelcomeBeats.jsx');
+    const currentContent = readFileSync(filePath, 'utf8');
+    
+    // Buscar la sección auto-actualizable
+    const startMarker = '// <AUTO-DEFAULTS-START>';
+    const endMarker = '// <AUTO-DEFAULTS-END>';
+    
+    const startIndex = currentContent.indexOf(startMarker);
+    const endIndex = currentContent.indexOf(endMarker);
+    
+    if (startIndex === -1 || endIndex === -1) {
+      throw new Error('No se encontraron marcadores AUTO-DEFAULTS en el archivo');
+    }
+    
+    // Generar el nuevo contenido
+    const timestamp = new Date().toISOString();
+    const beatsCode = beats.map(beat => `  \`${beat.replace(/`/g, '\\`')}\``).join(',\n');
+    
+    const newSection = `${startMarker}
+// updated ${timestamp}
+${beatsCode}
+${endMarker}`;
+    
+    // Reemplazar la sección
+    const beforeSection = currentContent.substring(0, startIndex);
+    const afterSection = currentContent.substring(endIndex + endMarker.length);
+    const newContent = beforeSection + newSection + afterSection;
+    
+    // Escribir el archivo actualizado
+    writeFileSync(filePath, newContent, 'utf8');
+    console.log(`📝 Archivo WelcomeBeats.jsx actualizado con ${beats.length} beats`);
+    
+  } catch (error) {
+    console.error('❌ Error actualizando archivo fuente:', error);
+    throw error;
+  }
+}
 
 // Importación dinámica para evitar errores de import
 async function importDB() {
   try {
-    const { saveScript, listScripts, updateScript } = await import('../../server/db.js');
-    return { saveScript, listScripts, updateScript };
+    const { saveScript, listScripts, updateScript, deleteScript } = await import('../../server/db.js');
+    return { saveScript, listScripts, updateScript, deleteScript };
   } catch (error) {
     console.error('❌ Error importando funciones de BD:', error);
     throw new Error('BD no disponible: ' + error.message);
@@ -41,7 +88,7 @@ async function syncDefaultBeatsToDatabase(beats, storageKey = 'welcomeBeatsV1') 
 
 // Función que REALMENTE actualiza o crea beats (SIN duplicados)
 async function updateAllBeatsInDatabase(beats, storageKey = 'welcomeBeatsV1') {
-  const { saveScript, updateScript, listScripts } = await importDB();
+  const { saveScript, updateScript, listScripts, deleteScript } = await importDB();
   
   try {
     console.log(`🔄 Sincronizando ${beats.length} beats en BD...`);
@@ -101,7 +148,36 @@ async function updateAllBeatsInDatabase(beats, storageKey = 'welcomeBeatsV1') {
       }
     }
     
-    console.log(`✅ Procesados ${results.length} beats (sin duplicados)`);
+    // 4. Eliminar beats que ya no existen en el nuevo array
+    const beatsToDelete = [];
+    Object.keys(existingByIndex).forEach(index => {
+      const indexNum = parseInt(index);
+      if (indexNum >= beats.length) {
+        // Este índice ya no existe en el nuevo array, hay que eliminarlo
+        beatsToDelete.push(existingByIndex[index]);
+      }
+    });
+    
+    if (beatsToDelete.length > 0) {
+      console.log(`🗑️ Eliminando ${beatsToDelete.length} beats obsoletos...`);
+      
+      for (const beatToDelete of beatsToDelete) {
+        console.log(`❌ Eliminando beat obsoleto (ID: ${beatToDelete.id})`);
+        await deleteScript(beatToDelete.id);
+      }
+    }
+    
+    console.log(`✅ Procesados ${results.length} beats, eliminados ${beatsToDelete.length} obsoletos`);
+    
+    // 5. Actualizar el archivo fuente para mantener sincronización
+    try {
+      await updateSourceFile(beats, storageKey);
+      console.log(`📝 Archivo fuente actualizado con ${beats.length} beats`);
+    } catch (fileError) {
+      console.warn('⚠️ No se pudo actualizar archivo fuente:', fileError.message);
+      // No fallar toda la operación por esto
+    }
+    
     return results;
   } catch (error) {
     console.error('❌ Error sincronizando beats en BD:', error);
