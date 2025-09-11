@@ -1,83 +1,138 @@
-# Node.js
+# ===== NODE.JS / JavaScript =====
+# Dependencies
 node_modules/
+pnpm-store/
+.pnpm-store/
+
+# Package manager logs and lockfiles
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+.pnpm-debug.log*
+lerna-debug.log*
 package-lock.json
-.pnpm-debug.log
+yarn.lock
 
-# pnpm stores (keep pnpm-lock.yaml committed)
-.pnpm-store/
-
-# Build output
+# ===== BUILD OUTPUTS =====
+# General build directories
 dist/
 build/
+out/
 .out/
+dev-dist/
+
+# Coverage and testing
 coverage/
 .nyc_output/
+.coverage/
+/jest-cache/
 
-# Vite / Rollup / bundlers
+# ===== BUNDLERS & DEV TOOLS =====
+# Vite
 .vite/
+.astro/
+
+# Other bundlers
 .cache/
 .parcel-cache/
 .rpt2_cache/
 .esbuild/
+.rollup.cache/
+.next/
+.nuxt/
 
-# IDEs and editors
+# ===== IDEs AND EDITORS =====
+# VS Code
 .vscode/
-.idea/
-*.sublime-workspace
-*.sublime-project
+.history/
 *.code-workspace
 
-# OS files
-.DS_Store
-Thumbs.db
-desktop.ini
+# JetBrains IDEs
+.idea/
 
-# Logs
-logs/
-*.log
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
 
-# Environment
-.env
-.env.*.local
-.env.local
-
-# Test / debug
-/coverage/
-/jest-cache/
-
-# Misc
-*.tmp
-*.temp
+# Vim
 *.swp
 *~
 
-# Samples / large assets (uncomment if you don't want to track large sample files)
-# samples/
+# ===== OPERATING SYSTEMS =====
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+.Trash-*
 
-# Lockfiles that may not apply to this repo
-yarn.lock
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+desktop.ini
+$RECYCLE.BIN/
 
-# Local dev server files
+# Linux
+*~
+.directory
+.Trash-*
+
+# ===== LOGS =====
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ===== ENVIRONMENT & CONFIG =====
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+.env.test
+
+# ===== TEMPORARY FILES =====
+*.tmp
+*.temp
+.tmp/
+temp/
+
+# ===== RUNTIME & PROCESSES =====
 pids/
 *.pid
 *.seed
+*.pid.lock
 
-# Mac/.Trash etc
-.Trash-
-
-# generated docs
+# ===== GENERATED DOCUMENTATION =====
 docs/dist/
+doc.json
 
-# VS Code extension host
-.history/
+# ===== PROJECT SPECIFIC =====
+# Audio samples (large files - keep README)
+samples/
+!samples/README.md
 
-dist
-out
-!docs/dist
-dist-*
+Dirt-Samples
+tidal-drum-machines
+webaudiofontdata
+
+# Strudel specific
+mytunes.ts
+repl-parcel
+repl_old
+tutorial.rendered.mdx
+talk/public/EmuSP12
+talk/public/samples
+server/samples/old
+repl/stats.html
+public/icons/apple-splash-*
+
+# ===== HASKELL (if used in project) =====
 cabal-dev
 *.o
 *.hi
@@ -99,33 +154,18 @@ cabal.project.local
 cabal.project.local~
 .HTF/
 .ghc.environment.*
-node_modules/
-.DS_Store
-repl-parcel
-mytunes.ts
-doc
-out
-.parcel-cache
-repl_old
-tutorial.rendered.mdx
-doc.json
-talk/public/EmuSP12
-talk/public/samples
-server/samples/old
-repl/stats.html
-coverage
-public/icons/apple-splash-*
-dev-dist
-Dirt-Samples
-tidal-drum-machines
-webaudiofontdata
-src-tauri/target
 
-# BEGIN JetBrains -> END JetBrains
+# ===== RUST/TAURI =====
+src-tauri/target/
+Cargo.lock
 
-# for JetBrains IDE users, e.g. WebStorm. Source: https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
-# Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio, WebStorm and Rider
-# Reference: https://intellij-support.jetbrains.com/hc/en-us/articles/206544839
+# ===== ADDITIONAL PROJECT OUTPUTS =====
+!docs/dist
+dist-*
+
+# ===== JETBRAINS IDEs (Detailed) =====
+# Covers IntelliJ, WebStorm, PhpStorm, PyCharm, etc.
+# Reference: https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
 
 # User-specific stuff
 .idea/**/workspace.xml
@@ -149,61 +189,108 @@ src-tauri/target
 .idea/**/uiDesigner.xml
 .idea/**/dbnavigator.xml
 
-# Gradle
+# Gradle & Maven
 .idea/**/gradle.xml
 .idea/**/libraries
-
-# Gradle and Maven with auto-import
-# When using Gradle or Maven with auto-import, you should exclude module files,
-# since they will be recreated, and may cause churn.  Uncomment if using
-# auto-import.
-# .idea/artifacts
-# .idea/compiler.xml
-# .idea/jarRepositories.xml
-# .idea/modules.xml
-# .idea/*.iml
-# .idea/modules
-# *.iml
-# *.ipr
 
 # CMake
 cmake-build-*/
 
-# Mongo Explorer plugin
+# Plugins
 .idea/**/mongoSettings.xml
-
-# File-based project format
-*.iws
-
-# IntelliJ
-out/
-
-# mpeltonen/sbt-idea plugin
-.idea_modules/
-
-# JIRA plugin
+.idea/replstate.xml
+.idea/sonarlint/
 atlassian-ide-plugin.xml
 
-# Cursive Clojure plugin
-.idea/replstate.xml
-
-# SonarLint plugin
-.idea/sonarlint/
-
-# Crashlytics plugin (for Android Studio and IntelliJ)
+# Crashlytics (Android)
 com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
 fabric.properties
 
-# Editor-based Rest Client
+# REST Client
 .idea/httpRequests
 
-# Android studio 3.1+ serialized cache file
+# Caches
 .idea/caches/build_file_checksums.ser
 
-# END JetBrains -> BEGIN JetBrains
+# File formats
+*.iws
+*.iml
+*.ipr
 
+# Other
+.idea_modules/
+
+# ===== AUDIO SAMPLES =====
+# Ignore samples but keep README for documentation
 samples/*
 !samples/README.md
-.idea/
+
+# ===== ADDITIONAL MODERN JS/TS =====
+# TypeScript
+*.tsbuildinfo
+
+# ESLint cache
+.eslintcache
+
+# Prettier cache
+.prettiercache
+
+# Stylelint cache
+.stylelintcache
+
+# npm/yarn cache
+.npm/
+.yarn/cache/
+.yarn/unplugged/
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Serverless directories
+.serverless/
+
+# FuseBox cache
+.fusebox/
+
+# DynamoDB Local files
+.dynamodb/
+
+# TernJS port file
+.tern-port
+
+# Stores VSCode versions used for testing VSCode extensions
+.vscode-test
+
+# Electron
+electron-builder-*
+
+# ===== AUDIO/MEDIA SPECIFIC =====
+# Audio cache and processing files
+*.tmp.wav
+*.tmp.mp3
+*.cache.json
+.audio-cache/
+
+# Web Audio worklet builds
+*.worklet.js.map
+
+# ===== MISC =====
+# Backup files
+*.backup
+*.bak
+*~
+
+# OS generated files
+.fseventsd
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Network files
+.netrwhist
