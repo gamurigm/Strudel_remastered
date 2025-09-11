@@ -4,8 +4,8 @@ export const prerender = false;
 // Importación dinámica para evitar errores de import
 async function importDB() {
   try {
-    const { saveScript, listScripts } = await import('../../server/db.js');
-    return { saveScript, listScripts };
+    const { saveScript, listScripts, updateScript } = await import('../../server/db.js');
+    return { saveScript, listScripts, updateScript };
   } catch (error) {
     console.error('❌ Error importando funciones de BD:', error);
     throw new Error('BD no disponible: ' + error.message);
@@ -39,38 +39,72 @@ async function syncDefaultBeatsToDatabase(beats, storageKey = 'welcomeBeatsV1') 
   }
 }
 
-// Función SIMPLIFICADA que siempre crea con título único (evita lógica compleja)
+// Función que REALMENTE actualiza o crea beats (SIN duplicados)
 async function updateAllBeatsInDatabase(beats, storageKey = 'welcomeBeatsV1') {
-  const { saveScript } = await importDB();
+  const { saveScript, updateScript, listScripts } = await importDB();
   
   try {
-    console.log(`🔄 Guardando ${beats.length} beats en BD...`);
+    console.log(`🔄 Sincronizando ${beats.length} beats en BD...`);
     
+    // 1. Buscar registros existentes para este storageKey
+    const existingScripts = await listScripts(500);
+    const existingForKey = existingScripts.filter(s => 
+      s.tags && s.tags.includes(storageKey)
+    );
+    
+    // 2. Agrupar existentes por índice
+    const existingByIndex = {};
+    existingForKey.forEach(script => {
+      const indexTag = script.tags ? script.tags.find(tag => tag.startsWith('index_')) : null;
+      if (indexTag) {
+        const index = parseInt(indexTag.split('_')[1]);
+        if (!existingByIndex[index] || new Date(script.created_at) > new Date(existingByIndex[index].created_at)) {
+          existingByIndex[index] = script;
+        }
+      }
+    });
+    
+    console.log(`📊 Encontrados ${Object.keys(existingByIndex).length} beats existentes`);
+    
+    // 3. Para cada beat, decidir si UPDATE o INSERT
     const results = [];
-    const timestamp = Date.now();
-    
     for (let index = 0; index < beats.length; index++) {
       const code = beats[index];
+      const existing = existingByIndex[index];
       
-      // Crear un título único que incluya timestamp para evitar conflictos
-      const uniqueTitle = `${storageKey}_beat_${index}_${timestamp}`;
+      if (existing && existing.code === code) {
+        // El código no cambió, no hacer nada
+        console.log(`⏭️ Beat ${index}: sin cambios`);
+        results.push(existing);
+        continue;
+      }
       
-      console.log(`💾 Guardando beat ${index + 1}: "${code.substring(0, 20)}..."`);
-      
-      const created = await saveScript({
-        title: uniqueTitle,
-        code: code,
-        description: `Beat ${index + 1} - ${new Date().toLocaleString()}`,
-        tags: [storageKey, 'beat', `index_${index}`]
-      });
-      
-      results.push(created);
+      if (existing) {
+        // Actualizar registro existente
+        console.log(`🔄 Beat ${index}: actualizando existente (ID: ${existing.id})`);
+        const updated = await updateScript(existing.id, {
+          code: code,
+          description: `Beat ${index + 1} - Actualizado ${new Date().toLocaleString()}`,
+          tags: [storageKey, 'beat', `index_${index}`]
+        });
+        results.push(updated);
+      } else {
+        // Crear nuevo registro
+        console.log(`➕ Beat ${index}: creando nuevo`);
+        const created = await saveScript({
+          title: `${storageKey}_beat_${index}`,
+          code: code,
+          description: `Beat ${index + 1} - Creado ${new Date().toLocaleString()}`,
+          tags: [storageKey, 'beat', `index_${index}`]
+        });
+        results.push(created);
+      }
     }
     
-    console.log(`✅ Guardados ${results.length} beats en BD`);
+    console.log(`✅ Procesados ${results.length} beats (sin duplicados)`);
     return results;
   } catch (error) {
-    console.error('❌ Error guardando beats en BD:', error);
+    console.error('❌ Error sincronizando beats en BD:', error);
     throw error;
   }
 }
