@@ -1,13 +1,3 @@
-
-
-
-
-
-
-
-
-
-
 /*
 setCps(108/60/4)
 
@@ -28,10 +18,10 @@ stack(
 s("bd!4,[~ sd]!2,[~ hh!2 hh*2]!2").apply(ritmo).room(0.1).delay(.15),
 s("hh!7 <~@3 hh*5 ~@3 hh*3  hh!2>").patt("0.1 0.5 1.5 1 1 0.6 0.9 1").apply(ritmo).gain(2)  
 )._pianoroll({minMidi:10, labels:1, strikeActive:1})
-
+*/
 
 //---------------------------------------------------------------
-*/
+
 
 
 
@@ -93,7 +83,7 @@ drums: `<a@27 [a,b]@24 [a,b,c]@5 [a,d]@56 [a,d,e]@2 [a,d]@20 [a,d,f]@2 [a,d]@24 
   sd: s('sd').velocity(.7),
   hh: s('hh').velocity(0.1).hpf(8000),
   cr: s('cr').speed(0.7).velocity(0.1).hpf(6000),
-}).bank("Linn9000").room(0.2).gain(0.8).rsize(4)
+}).bank("Linn9000").room(0.2).gain(0.8).rsize(4).color('red')
 
 
 

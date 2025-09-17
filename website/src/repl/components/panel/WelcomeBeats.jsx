@@ -4,9 +4,21 @@ import { MiniRepl } from '@src/docs/MiniRepl';
 // Defaults auto-escribibles (seccion marcada) ------------------------------
 const DEFAULT_BEATS = [
 // <AUTO-DEFAULTS-START>
-// updated 2025-09-11T01:15:43.928Z
-  `s("hh bd")`,
-  `NO`
+// updated 2025-09-17T17:09:42.735Z
+  `const ritmo     = x => x.bank("AlesisHR16").clip(1).gain(0.75)
+s("bd!4,[~ sd]!2,[~ hh!2 hh*2]!2").apply(ritmo).room(0.1).delay(.05)`,
+  `setCps(120/60/4)  //kick caja 2-4 / hh upbeats
+
+const drums = stack(
+  s("bd ~ sd ~"),  
+  s("<~ hh>*8")
+).gain(0.8)
+
+const melody = note("<c4 d4 e4 f4 g4 a4 b4 c5>").s("piano").gain(0.6).room(0.3)
+const bass = note("<c2 g2>").s("sawtooth").gain(0.5).lpf(300)
+
+stack(drums, melody, bass).room(0.2).gain(0.9)`,
+  `sound("bd sd [~ bd] sd").bank("RolandTR808")`
 // <AUTO-DEFAULTS-END>
 ];
 

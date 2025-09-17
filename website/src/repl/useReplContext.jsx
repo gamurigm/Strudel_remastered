@@ -1,5 +1,5 @@
 /*
-Repl.jsx - <short description TODO>
+useReplContext.jsx - Repl context hook for Strudel
 Copyright (C) 2022 Strudel contributors - see <https://codeberg.org/uzu/strudel/src/branch/main/repl/src/App.js>
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Affero General Public License for more details. You should have received a copy of the GNU Affero General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
@@ -37,16 +37,23 @@ import { defaultTune } from './defaultTune.mjs';
 import './Repl.css';
 import { setInterval, clearInterval } from 'worker-timers';
 import { getMetadata } from '../metadata_parser';
+import { addCustomKeyboardShortcut } from './custom-keyboard-shortcut.jsx';
 
-const { latestCode, maxPolyphony, audioDeviceName, multiChannelOrbits } = settingsMap.get();
-let modulesLoading, presets, drawContext, clearCanvas, audioReady;
+// Initialize module-level variables lazily to avoid side effects during import
+let moduleState = null;
 
-if (typeof window !== 'undefined') {
-  audioReady = initAudioOnFirstClick({
-    maxPolyphony,
-    audioDeviceName,
-    multiChannelOrbits: parseBoolean(multiChannelOrbits),
-  });
+function initializeModuleState() {
+  if (moduleState) return moduleState;
+  
+  const { latestCode, maxPolyphony, audioDeviceName, multiChannelOrbits } = settingsMap.get();
+  let modulesLoading, presets, drawContext, clearCanvas, audioReady;
+
+  if (typeof window !== 'undefined') {
+    audioReady = initAudioOnFirstClick({
+      maxPolyphony,
+      audioDeviceName,
+      multiChannelOrbits: parseBoolean(multiChannelOrbits),
+    });
     // apply persisted master gain once audio is ready
     audioReady.then(() => {
       try {
@@ -59,17 +66,33 @@ if (typeof window !== 'undefined') {
         // ignore
       }
     });
-  modulesLoading = loadModules();
-  presets = prebake();
-  drawContext = getDrawContext();
-  clearCanvas = () => drawContext.clearRect(0, 0, drawContext.canvas.height, drawContext.canvas.width);
+    modulesLoading = loadModules();
+    presets = prebake();
+    drawContext = getDrawContext();
+    clearCanvas = () => drawContext.clearRect(0, 0, drawContext.canvas.height, drawContext.canvas.width);
+  }
+
+  moduleState = {
+    latestCode,
+    maxPolyphony,
+    audioDeviceName,
+    multiChannelOrbits,
+    modulesLoading,
+    presets,
+    drawContext,
+    clearCanvas,
+    audioReady
+  };
+  
+  return moduleState;
 }
 
 async function getModule(name) {
-  if (!modulesLoading) {
+  const state = initializeModuleState();
+  if (!state.modulesLoading) {
     return;
   }
-  const modules = await modulesLoading;
+  const modules = await state.modulesLoading;
   return modules.find((m) => m.packageName === name);
 }
 
@@ -83,6 +106,7 @@ export function useReplContext(options = {}) {
   const getTime = shouldUseWebaudio ? getAudioContextCurrentTime : getPerformanceTimeSeconds;
 
   const init = useCallback(() => {
+    const moduleState = initializeModuleState();
     const drawTime = [-2, 2];
     const drawContext = getDrawContext();
     const editor = new StrudelMirror({
@@ -98,7 +122,7 @@ export function useReplContext(options = {}) {
       pattern: silence,
       drawTime,
       drawContext,
-      prebake: async () => Promise.all([modulesLoading, presets]),
+      prebake: async () => Promise.all([moduleState.modulesLoading, moduleState.presets]),
       solo,
       onUpdateState: (state) => {
         setReplState({ ...state });
@@ -108,7 +132,7 @@ export function useReplContext(options = {}) {
           clearHydra();
         }
       },
-      beforeEval: () => audioReady,
+      beforeEval: () => moduleState.audioReady,
       afterEval: (all) => {
         const { code } = all;
         //post to iframe parent (like Udels) if it exists...
@@ -239,6 +263,9 @@ export function useReplContext(options = {}) {
     });
 
     editorRef.current = editor;
+    
+    // Agregar atajos de teclado personalizados
+    const cleanupShortcuts = addCustomKeyboardShortcut(editorRef);
 
     // Hot Module Replacement: if defaultTune.mjs changes, update the editor live
     if (import.meta.hot) {
@@ -262,6 +289,13 @@ export function useReplContext(options = {}) {
         console.debug('HMR accept for defaultTune.mjs not available', err);
       }
     }
+    
+    // Cleanup function para remover los atajos cuando el componente se desmonte
+    return () => {
+      if (cleanupShortcuts) {
+        cleanupShortcuts();
+      }
+    };
   }, []);
 
   const [replState, setReplState] = useState({});
@@ -296,10 +330,11 @@ export function useReplContext(options = {}) {
   };
 
   const resetEditor = async () => {
+    const moduleState = initializeModuleState();
     (await getModule('@strudel/tonal'))?.resetVoicings();
     resetDefaults();
     resetGlobalEffects();
-    clearCanvas();
+    moduleState.clearCanvas();
     clearHydra();
     resetLoadedSounds();
     editorRef.current.repl.setCps(0.5);
