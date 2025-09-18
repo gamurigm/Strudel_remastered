@@ -26,7 +26,7 @@ function createSession(channel, code = '') {
   return { id: crypto.randomUUID(), name: `Canal ${channel}`, code, channel, color };
 }
 
-function Session({ session, active, registerContext, initialCode }) {
+function Session({ session, active, registerContext, initialCode, updateCode }) {
   // solo:false permite que múltiples sesiones reproduzcan simultáneamente
   const ctx = useReplContext({ solo: false, sessionId: session.id });
   const injectedRef = useRef(false);
@@ -37,7 +37,10 @@ function Session({ session, active, registerContext, initialCode }) {
     if (ed && !injectedRef.current) {
       try {
         const current = ed.getCode?.() || '';
-        if (!active && !session.code) {
+        // Channel 1: always defaultTune
+        if (session.channel === 1) {
+          ed.setCode(defaultTune);
+        } else if (!active && !session.code) {
           // In multi-repl, avoid auto-loading defaultTune in inactive/empty sessions.
           // Force them to start silent to prevent cacophony on "Play all".
           // Use a small delay to win any race against async defaultTune load in useReplContext.
@@ -45,10 +48,8 @@ function Session({ session, active, registerContext, initialCode }) {
             try { ed.setCode(''); } catch {}
           }, 30);
         } else if (active) {
-          // For the active session: if there's no saved code and the editor is empty, inject defaultTune
-          if (!session.code && (!current || current === '// LOADING' || !current.trim())) {
-            ed.setCode(defaultTune);
-          } else if (!current || current === '// LOADING') {
+          // For active sessions 2+, use saved code if present; otherwise keep empty
+          if (!current || current === '// LOADING') {
             ed.setCode(session.code || initialCode || '');
           }
         } else if (!current || current === '// LOADING') {
@@ -65,6 +66,18 @@ function Session({ session, active, registerContext, initialCode }) {
     registerContext(session.id, ctx);
   }, [ctx, session.id, registerContext]);
 
+  // Propagate live code changes upward for immediate persistence
+  useEffect(() => {
+    // Avoid propagating before initial injection completes
+    if (!injectedRef.current) return;
+    const code = ctx?.activeCode;
+    if (typeof code !== 'string') return;
+    const trimmed = code.trim();
+    // Ignore empty or placeholder content
+    if (!trimmed || trimmed === '// LOADING') return;
+    updateCode?.(session.id, code);
+  }, [ctx?.activeCode, session.id, updateCode]);
+
   return (
     <div
       className={[
@@ -80,15 +93,93 @@ function Session({ session, active, registerContext, initialCode }) {
 export default function MultiReplManager() {
   const [sessions, setSessions] = useState([]); // {id,name,code,color}
   const [activeId, setActiveId] = useState(null);
-  // expose active session id globally for conditional HMR evaluate
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.__strudelActiveSessionId = activeId;
-    }
-  }, [activeId]);
   const contextsRef = useRef(new Map());
   const mpRef = useRef();
   const suppressIncoming = useRef(false); // avoid echo loops
+
+  // Función para forzar el guardado del estado de todos los canales
+  const forceSaveAllSessions = useCallback(() => {
+    setSessions((prev) => {
+      let hasChanged = false;
+      const newSessions = prev.map((s) => {
+        const ctx = contextsRef.current.get(s.id);
+        const liveCode = ctx?.editorRef?.current?.getCode?.();
+        if (liveCode && liveCode !== s.code) {
+          hasChanged = true;
+          return { ...s, code: liveCode };
+        }
+        return s;
+      });
+      if (hasChanged) {
+        return newSessions;
+      }
+      return prev;
+    });
+  }, []);
+
+  // Guardar al cambiar de canal (al cambiar activeId)
+  useEffect(() => {
+    forceSaveAllSessions();
+    if (typeof window !== 'undefined') {
+      window.__strudelActiveSessionId = activeId;
+    }
+  }, [activeId, forceSaveAllSessions]);
+
+  // Guardar cuando la ventana pierde el foco (blur)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.addEventListener('blur', forceSaveAllSessions);
+    return () => {
+      window.removeEventListener('blur', forceSaveAllSessions);
+    };
+  }, [forceSaveAllSessions]);
+
+  // Guardado final y síncrono antes de cerrar la ventana/app (desktop/web)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const saveAllNow = () => {
+      try {
+        // Base: último snapshot persistido o estado actual
+        const raw = localStorage.getItem(LS_KEY);
+        const base = raw ? JSON.parse(raw) : sessions;
+        const latest = (base || []).map((s) => {
+          const ctx = contextsRef.current.get(s.id);
+          const live = ctx?.editorRef?.current?.getCode?.();
+          const liveStr = typeof live === 'string' ? live : '';
+          const trimmed = liveStr.trim();
+          // Channel 1 never persists code; keep empty to load defaultTune next time
+          if (s.channel === 1) {
+            return { ...s, code: '' };
+          }
+          // Only take live if it is non-empty and not a placeholder; otherwise keep saved
+          const safe = trimmed && trimmed !== '// LOADING' ? liveStr : s.code;
+          return { ...s, code: safe };
+        });
+        if (latest && latest.length) {
+          localStorage.setItem(LS_KEY, JSON.stringify(latest));
+        }
+      } catch (e) {
+        // no-op
+      }
+    };
+
+    const handleBeforeUnload = () => {
+      saveAllNow();
+    };
+
+    const handlePageHide = () => {
+      saveAllNow();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('pagehide', handlePageHide);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('pagehide', handlePageHide);
+    };
+  }, [sessions]);
 
   // Snippet helper removed per user request
 
@@ -99,8 +190,14 @@ export default function MultiReplManager() {
       if (raw) {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed) && parsed.length) {
-          setSessions(parsed);
-          setActiveId(parsed[0].id);
+          // Ensure channel numbering starts at 1 and channel 1 has no persisted code
+          const normalized = parsed.map((s, i) => ({
+            ...s,
+            channel: s.channel || (i + 1),
+            code: (s.channel || (i + 1)) === 1 ? '' : (s.code || ''),
+          }));
+          setSessions(normalized);
+          setActiveId(normalized[0].id);
           return;
         }
       }
@@ -112,25 +209,20 @@ export default function MultiReplManager() {
 
   // persist sessions structural data & latest code snapshots
   useEffect(() => {
-    try { localStorage.setItem(LS_KEY, JSON.stringify(sessions)); } catch {}
+    try { 
+      if (sessions.length > 0) {
+        localStorage.setItem(LS_KEY, JSON.stringify(sessions)); 
+      }
+    } catch {}
   }, [sessions]);
 
-  // periodic code snapshot
+  // periodic code snapshot (fallback)
   useEffect(() => {
     const handle = setInterval(() => {
-      setSessions((prev) => prev.map((s) => {
-        const ctx = contextsRef.current.get(s.id);
-        const live = ctx?.editorRef?.current?.getCode?.();
-        if (live && live !== s.code) {
-          // broadcast change (throttled by client)
-          mpRef.current?.sendCode(s.id, live);
-          return { ...s, code: live };
-        }
-        return s;
-      }));
-    }, 1500);
+      forceSaveAllSessions();
+    }, 2500); // Aumentado a 2.5s para reducir frecuencia
     return () => clearInterval(handle);
-  }, []);
+  }, [forceSaveAllSessions]);
 
   // init multiplayer client
   useEffect(() => {
@@ -166,6 +258,18 @@ export default function MultiReplManager() {
       return [...prev, s];
     });
   };
+
+  const updateSessionCode = useCallback((id, code) => {
+  if (typeof code !== 'string') return;
+  const trimmed = code.trim();
+  if (!trimmed || trimmed === '// LOADING') return;
+    setSessions((prev) => prev.map((s) => {
+      if (s.id !== id) return s;
+      // Never persist defaultTune into channel 1 snapshot; keep it implicit
+      if (s.channel === 1) return s;
+      return s.code === code ? s : { ...s, code };
+    }));
+  }, []);
   const removeSession = (id) => {
     // Detener audio del canal antes de eliminarlo
     try {
@@ -357,13 +461,14 @@ export default function MultiReplManager() {
         </div>
       </div>
       <div className="relative flex-1 overflow-hidden">
-        {sessions.map((s) => (
+    {sessions.map((s) => (
           <Session
             key={s.id}
             session={s}
             active={s.id === activeId}
             registerContext={registerContext}
             initialCode={s.code}
+      updateCode={updateSessionCode}
           />
         ))}
       </div>
