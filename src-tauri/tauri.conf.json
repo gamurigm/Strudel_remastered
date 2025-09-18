@@ -67,10 +67,10 @@
     "windows": [
       {
         "fullscreen": false,
-        "height": 1200,
+  "height": 800,
         "resizable": true,
         "title": "Strudel REPL",
-        "width": 1800
+  "width": 1200
       }
     ]
   }
