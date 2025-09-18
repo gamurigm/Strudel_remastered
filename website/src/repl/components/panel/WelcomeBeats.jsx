@@ -4,21 +4,70 @@ import { MiniRepl } from '@src/docs/MiniRepl';
 // Defaults auto-escribibles (seccion marcada) ------------------------------
 const DEFAULT_BEATS = [
 // <AUTO-DEFAULTS-START>
-// updated 2025-09-17T17:09:42.735Z
+// updated 2025-09-18T00:22:28.738Z
   `const ritmo     = x => x.bank("AlesisHR16").clip(1).gain(0.75)
 s("bd!4,[~ sd]!2,[~ hh!2 hh*2]!2").apply(ritmo).room(0.1).delay(.05)`,
-  `setCps(120/60/4)  //kick caja 2-4 / hh upbeats
+  `setCps(90/60/4)  
 
+// Marcación de tiempo simple (metrónomo)
+const metronome = stack(
+  s("bd").gain(0.5),     // Tiempo fuerte
+  s("hh*4").gain(0.5)    // Subdivisión suave
+)
+
+const harmony = "<C^9 Fm7 [Am7 D7] Em7 B7b13 F#m7 [FM13 Fo] [Dm11 G7sus]>"
+  .chord()
+  
+  .voicing()
+  .s("piano")
+  .gain(0.7)
+  .room(0.4)
+  .release(0.8)
+
+stack(
+  metronome,
+  harmony  
+)._pianoroll({labels:1})`,
+  `// Composición simple: "Ritmo Tropical"
+setCps(120/60/4)  // Tempo a 120 BPM
+
+// Batería básica
 const drums = stack(
-  s("bd ~ sd ~"),  
-  s("<~ hh>*8")
+  s("bd ~ sd ~"),  // Bombo y caja
+  s("hh*4")        // Hi-hats
 ).gain(0.8)
 
+// Melodía con acordes
 const melody = note("<c4 d4 e4 f4 g4 a4 b4 c5>").s("piano").gain(0.6).room(0.3)
+
+// Bajo pulsante
 const bass = note("<c2 g2>").s("sawtooth").gain(0.5).lpf(300)
 
-stack(drums, melody, bass).room(0.2).gain(0.9)`,
-  `sound("bd sd [~ bd] sd").bank("RolandTR808")`
+// Combinar todo
+stack(drums, melody, bass).room(0.2).gain(0.9)
+
+`,
+  `setCps(90/60/4)  
+
+// Marcación de tiempo simple (metrónomo)
+const metronome = stack(
+  s("bd").gain(0.5),     // Tiempo fuerte
+  s("hh*4").gain(0.5)    // Subdivisión suave
+)
+
+const harmony = "<C^9 Fm7 [Am7 D7] Em7 B7b13 F#m7 [FM7 Fm6] [Dm9 G7sus]>"
+  .chord()
+  
+  .voicing()
+  .s("piano")
+  .gain(0.7)
+  .room(0.4)
+  .release(0.8)
+
+stack(
+  metronome,
+  harmony  
+)._pianoroll({labels:1})`
 // <AUTO-DEFAULTS-END>
 ];
 

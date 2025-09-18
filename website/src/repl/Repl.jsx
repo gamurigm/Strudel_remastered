@@ -1,3 +1,4 @@
+/* @refresh skip */
 /*
 Repl.jsx - <short description TODO>
 Copyright (C) 2022 Strudel contributors - see <https://codeberg.org/uzu/strudel/src/branch/main/repl/src/App.js>

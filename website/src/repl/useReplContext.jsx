@@ -98,7 +98,8 @@ async function getModule(name) {
 
 const initialCode = `// LOADING`;
 
-export function useReplContext(options = {}) {
+/* @refresh skip */
+function useReplContext(options = {}) {
   const { solo = true, sessionId } = options; // solo=true mantiene comportamiento anterior; en MultiRepl se usará false
   const { isSyncEnabled, audioEngineTarget } = useSettings();
   const shouldUseWebaudio = audioEngineTarget !== audioEngineTargets.osc;
@@ -263,9 +264,6 @@ export function useReplContext(options = {}) {
     });
 
     editorRef.current = editor;
-    
-    // Agregar atajos de teclado personalizados
-    const cleanupShortcuts = addCustomKeyboardShortcut(editorRef);
 
     // Hot Module Replacement: if defaultTune.mjs changes, update the editor live
     if (import.meta.hot) {
@@ -289,13 +287,6 @@ export function useReplContext(options = {}) {
         console.debug('HMR accept for defaultTune.mjs not available', err);
       }
     }
-    
-    // Cleanup function para remover los atajos cuando el componente se desmonte
-    return () => {
-      if (cleanupShortcuts) {
-        cleanupShortcuts();
-      }
-    };
   }, []);
 
   const [replState, setReplState] = useState({});
@@ -365,6 +356,13 @@ export function useReplContext(options = {}) {
   };
 
   const handleShare = async () => shareCode(replState.code);
+  
+  // Agregar atajos de teclado personalizados DESPUÉS de que handleEvaluate esté definido
+  useEffect(() => {
+    const cleanupShortcuts = addCustomKeyboardShortcut(editorRef, { solo, sessionId, handleEvaluate });
+    return cleanupShortcuts;
+  }, [solo, sessionId, handleEvaluate]);
+  
   const context = {
     started,
     pending,
@@ -383,3 +381,5 @@ export function useReplContext(options = {}) {
   };
   return context;
 }
+
+export { useReplContext };
