@@ -4,7 +4,7 @@ import { MiniRepl } from '@src/docs/MiniRepl';
 // Defaults auto-escribibles (seccion marcada) ------------------------------
 const DEFAULT_BEATS = [
 // <AUTO-DEFAULTS-START>
-// updated 2025-09-18T01:30:57.997Z
+// updated 2025-09-22T04:17:30.125Z
   `const ritmo     = x => x.bank("AlesisHR16").clip(1).gain(0.75)
 s("bd!4,[~ sd]!2,[~ hh!2 hh*2]!2").apply(ritmo).room(0.1).delay(.05)`,
   `setCps(90/60/4)  
@@ -44,9 +44,7 @@ const melody = note("<c4 d4 e4 f4 g4 a4 b4 c5>").s("piano").gain(0.6).room(0.3)
 const bass = note("<c2 g2>").s("sawtooth").gain(0.5).lpf(300)
 
 // Combinar todo
-stack(drums, melody, bass).room(0.2).gain(0.9)
-
-`,
+stack(drums, melody, bass).room(0.2).gain(0.9)`,
   `setCps(90/60/4)  
 
 // Marcación de tiempo simple (metrónomo)
@@ -67,7 +65,76 @@ const harmony = "<C^9 Fm7 [Am7 D7] Em7 B7b13 F#m7 [FM7 Fm6] [Dm9 G7sus]>"
 stack(
   metronome,
   harmony  
-)._pianoroll({labels:1})`
+)._pianoroll({labels:1})`,
+  `setCps(148/60/4)
+
+await samples({'gtr': 'gtr/0001_cleanC.wav'}, 'github:tidalcycles/Dirt-Samples/master/');
+
+let  ritmo = x => x.bank("AlesisHR16").clip(1).gain(0.6)
+
+const prog = " <a@20 a1@3.5 a2@1.75 ~  a@8 a1@3.5 a2@1.75 ~>".pickRestart({
+ a: "< E C#m7 F# G#m >", //5
+ a1: "< EM7 C#m7 F# G#m7>",  //1
+ a2: "< [[~  F# F# G#m] G#m] [[~ F# F# G#m] G#m]>" //1
+  //b: "<F# G# F# G#>"
+  
+})
+
+
+const voic = chord(prog).anchor("c#4").mode("above").voicing()
+
+const harmony1 = voic
+  .s("piano:2")
+  .gain(1.1)
+  .room(0.9)
+  .release(0.1)
+
+
+
+ritmo = stack(
+  s("~ bd ~ bd"),
+  s("~ sd ~ sd")
+).apply(ritmo).room(0.1)
+
+stack(ritmo, harmony1)
+
+
+
+
+
+
+/*
+const metronome = stack(
+  s("bd ~ [~ bd] ~").gain(0.78),
+  s("< ~ hh >*8").gain(1).hpf(3500),
+  s("~ ~ ~ cp").lpf(2500),
+  s("<~@29 ~ ~ ~ hh*16>")
+)
+
+const prog = "<[C^9!2 ~ CM9] [~ ~ Fm7!2] [Am7 ~ ~ Dm7] [Em7 ~ Em7 ~] [B7 ~@2 ] [F#m7!2 ~ ~] [FM13 Fo] [Dm11 G7sus]>"
+const voic = chord(prog).anchor("g3").mode("above").voicing()
+
+const harmony = voic
+  .s("piano:5")
+  .gain(1)
+  .room(0.4)
+  .release(0.8)
+  .delay(0.2)
+
+
+const guitarArp = n("0 ~ 1 3 ~ 2 1 ~")
+  .set(voic)
+  .s("gm_electric_guitar_muted")
+  .gain(1)
+  .room(0.5)
+  .release(0.5)
+  .delay(0.27)
+
+const pad ="<[C^9!2 ~ CM9] [~ ~ Fm7!2] [Am7 ~ ~ Dm7] [Em7 ~ Em7 ~] [B7 ~@2 ] [F#m7!2 ~ ~] [FM13 Fo] [Dm11 G7sus]>" 
+const padharm = chord(pad).anchor("g3").mode("above").voicing().s("gm_fx_brightness")
+
+stack(metronome, harmony, guitarArp, padharm)._pianoroll({ labels: 1 })
+*/`
 // <AUTO-DEFAULTS-END>
 ];
 
