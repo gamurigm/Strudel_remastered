@@ -8,7 +8,7 @@ import { useState, useCallback } from 'react';
 const genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
 
 export default function ChannelRack({ context }) {
-  const { editorRef, onEvaluate, onStop } = context || {};
+  const { editorRef, onEvaluate, onStop, handleStop } = context || {};
   const [channels, setChannels] = useState([]); // canales adicionales (2..n)
   const [isPlaying, setIsPlaying] = useState(false);
 
@@ -49,9 +49,15 @@ export default function ChannelRack({ context }) {
   }, [buildCompositeCode, onEvaluate]);
 
   const stop = useCallback(() => {
-    try { onStop?.(); } catch(_) {}
+    try {
+      if (handleStop) {
+        handleStop();
+      } else {
+        onStop?.();
+      }
+    } catch(_) {}
     setIsPlaying(false);
-  }, [onStop]);
+  }, [onStop, handleStop]);
 
   const togglePlay = useCallback(() => {
     isPlaying ? stop() : play();

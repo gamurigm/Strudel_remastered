@@ -87,40 +87,37 @@ drums: `<a@27 [a,b]@24 [a,b,c]@5 [a,d]@56 [a,d,e]@2 [a,d]@20 [a,d,f]@2 [a,d]@24 
 }).bank("Linn9000").room(0.2).gain(0.8).rsize(4).color('red')
 */
 
-
-
-setCps(148/60/4)
+//------------------------------------------------------------------------------------------------
+// TEARDROPS
+setCps(142/60/4);
 
 await samples({'gtr': 'gtr/0001_cleanC.wav'}, 'github:tidalcycles/Dirt-Samples/master/');
 
-let  ritmo = x => x.bank("AlesisHR16").clip(1).gain(0.6)
+const ritmoBeat = x => x.bank("AlesisHR16").clip(1).gain(0.6);
 
-const prog = " <a@20 a1@3.5 a2@1.75 ~  a@8 a1@3.5 a2@1.75 ~>".pickRestart({
- a: "< E C#m7 F# G#m >", //5
- a1: "< EM7 C#m7 F# G#m7>",  //1
- a2: "< [[~  F# F# G#m] G#m] [[~ F# F# G#m] G#m]>" //1
-  //b: "<F# G# F# G#>"
+const prog = " <a@20 a1@3.5 a2@2 ~@1.5  a@8 a1@3.5 a2@2 ~@0.5 a@8>".pickRestart({
+  a:  "< E C#m7 F# G#m >", //5
+  a1: "< E C#m7 F# G#m7>",  //1
+  a2: "< [[~  F# F# G#m] G#m] [[~ F# F# G#m] G#m] >" //1
   
-})
+});
 
-
-const voic = chord(prog).anchor("c#4").mode("above").voicing()
+const voic = chord(prog)
+  .anchor("c#4")
+  .mode("above")
+  .voicing();
 
 const harmony1 = voic
   .s("piano:2")
   .gain(1.1)
   .room(0.9)
-  .release(0.1)
+  .release(0.1);
 
-
-
-ritmo = stack(
+const r = stack(
   s("~ bd ~ bd"),
   s("~ sd ~ sd")
-).apply(ritmo).room(0.1)
+).apply(ritmoBeat).room(0.5);
 
-stack(ritmo, harmony1)
-
-
+stack(r, harmony1);
 
 

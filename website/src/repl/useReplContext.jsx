@@ -356,6 +356,16 @@ function useReplContext(options = {}) {
   };
 
   const handleShare = async () => shareCode(replState.code);
+    // Handler global para Stop: detiene scheduler y silencia samples activos
+    const handleStop = async () => {
+      try {
+        await editorRef.current?.repl?.stop?.();
+        // Silencia cualquier sample largo activo
+        await editorRef.current?.repl?.evaluate?.('all(x=>x.stop())', false, false);
+      } catch (e) {
+        console.warn('Error al detener y silenciar:', e);
+      }
+    };
   
   // Agregar atajos de teclado personalizados DESPUÉS de que handleEvaluate esté definido
   useEffect(() => {
@@ -374,6 +384,7 @@ function useReplContext(options = {}) {
     handleShuffle,
     handleShare,
     handleEvaluate,
+      handleStop,
     init,
     error,
     editorRef,
