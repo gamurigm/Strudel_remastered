@@ -5,6 +5,7 @@ import { FilesTab } from './FilesTab';
 import { Reference } from './Reference';
 import { SettingsTab } from './SettingsTab';
 import { SoundsTab } from './SoundsTab';
+import { ChordExplorer } from './ChordExplorer';
 import { useLogger } from '../useLogger';
 import { WelcomeTab } from './WelcomeTab';
 import { PatternsTab } from './PatternsTab';
@@ -79,6 +80,7 @@ const tabNames = {
   welcome: 'intro',
   patterns: 'patterns',
   sounds: 'sounds',
+  chords: 'chords',
   reference: 'reference',
   console: 'console',
   settings: 'settings',
@@ -124,6 +126,8 @@ function PanelContent({ context, tab }) {
       return <ConsoleTab />;
     case tabNames.sounds:
       return <SoundsTab />;
+    case tabNames.chords:
+      return <ChordExplorer context={context} />;
     case tabNames.reference:
       return <Reference />;
     case tabNames.settings:
