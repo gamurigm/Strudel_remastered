@@ -4,7 +4,7 @@ import { MiniRepl } from '@src/docs/MiniRepl';
 // Defaults auto-escribibles (seccion marcada) ------------------------------
 const DEFAULT_BEATS = [
 // <AUTO-DEFAULTS-START>
-// updated 2025-09-22T04:17:30.125Z
+// updated 2026-03-27T16:38:00.041Z
   `const ritmo     = x => x.bank("AlesisHR16").clip(1).gain(0.75)
 s("bd!4,[~ sd]!2,[~ hh!2 hh*2]!2").apply(ritmo).room(0.1).delay(.05)`,
   `setCps(90/60/4)  
